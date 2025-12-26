@@ -52,4 +52,10 @@ export const getJobs = async () => {
   return response.data;
 };
 
+// Get personalized job recommendations based on resume similarity
+export const getJobRecommendations = async (limit = 10) => {
+  const response = await api.get(`/jobs/recommendations?limit=${limit}`);
+  return response.data;
+};
+
 export default api;
