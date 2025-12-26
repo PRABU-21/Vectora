@@ -1,0 +1,42 @@
+**Candidate Name:** PRABAKARAN S B
+
+**Desired Role:** Aspiring AI Developer
+
+**About:**
+Enthusiastic AI Developer Fresher with a strong foundation in Python, C, Java, and core concepts like OOPs and Machine Learning. Skilled in MERN stack, Tailwind CSS, HTML, and basics of Prompt Engineering. Passionate about building innovative solutions with a commitment to continuous learning and excellence. Passionate about delivering innovative solutions and Continuously seeking growth opportunities through which a strong commitment to excellence is brought.
+
+**Contact Information:**
+*   Email: (Not provided, mentioned "Gmail")
+*   LinkedIn: (Not provided, mentioned "Likedin")
+*   LeetCode: (Not provided, mentioned "leetcode")
+*   Phone: (Not provided, mentioned "phone")
+*   GitHub: (Not provided, mentioned "GitHub")
+
+**Education:**
+*   **B.Tech AI & DS:** Currently pursuing Artificial Intelligence and Data Science at Kongu Engineering College. CGPA: 8.45*
+*   **Grade 12:** Graduated in March 2023 from The Ashok Leyland School, CBSE. Percentage: 86.2%
+*   **Grade 10:** Graduated in March 2021 from The Ashok Leyland School, CBSE. Percentage: 88.2%
+
+**Experience:**
+*   **Internship - ChainAim Technologies:** Currently interning at Chain Aim Technologies.
+    *   **Responsibilities:** Contributing to ACTUS framework integration and financial mapping logic. Collaborated with the team to implement mappings and workflows. Documented work using Docusaurus. Actively using GitHub for version control and collaborative development. Gained hands-on experience with financial contract standards and real-world use cases.
+
+**Technical Skills:**
+*   **Programming Languages:** Java, C, Python, JavaScript
+*   **AI Skills:** LLM, Deep Learning, Machine Learning
+*   **Data Analysis:** PowerBI
+*   **Full Stack:** MongoDB, Express, React, Node.js
+*   **Other:** OOPs, MERN stack, Tailwind CSS, HTML, Prompt Engineering
+
+**Projects:**
+*   **Full Stack Project (MERN) - "Library Management System"**
+    *   **Description:** Built a full-stack Library Management System using MongoDB, Express.js, React, and Node.js. Implemented CRUD operations to manage books, authors, and user records with intuitive UI and real-time updates. Enabled seamless book issuance, return tracking, and search functionality.
+*   **Intel MediLink project - "Advanced healthcare insights powered by AI"**
+    *   **Description:** Developed an AI-powered healthcare platform with secure JWT authentication and real-time health tracking. Integrated Bio-Medical-Llama-3-8B for food image analysis and a conversational chatbot for medical insights. Enabled sentiment analysis via voice/text inputs and delivered weekly medical news updates. Built using MERN stack with a fully responsive, mobile-friendly UI.
+*   **LLM - "Replicated GPT-2 Architecture From Scratch"**
+    *   **Description:** Reconstructed GPT-2 architecture from scratch, implementing key components like multi-head attention, positional encoding, layer normalization, and autoregressive decoding. Gained in-depth understanding of transformer layers and attention mechanisms. Successfully integrated and fine-tuned pre-trained weights for improved language generation performance.
+
+**Achievements:**
+*   **Winners - 1st Place in Techno Fest - Project Expo:** Kongu Engineering College, 2025.
+*   **Runners - 2nd Place in Hacknovate - Hackathon:** Kongu Engineering College, 2024.
+*   **Winner - 1st Place in Paper Presentation in New Wells:** Conducted by the AI Association, Kongu
