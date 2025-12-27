@@ -641,7 +641,7 @@ const Signup = () => {
                 />
               </svg>
             </div>
-            <h1 className="text-4xl font-bold mb-4">Join Madathon</h1>
+            <h1 className="text-4xl font-bold mb-4">Join Vectora</h1>
             <p className="text-xl text-red-100 leading-relaxed">
               Create your account in just a few simple steps
             </p>

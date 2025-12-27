@@ -253,7 +253,7 @@ const JobRecommendations = () => {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                Madathon
+                Vectora
               </h1>
             </div>
             <div className="flex items-center gap-6">

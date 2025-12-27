@@ -77,7 +77,7 @@ const Dashboard = () => {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                Madathon
+                Vectora
               </h1>
             </div>
             <div className="flex items-center gap-6">
@@ -457,7 +457,7 @@ const Dashboard = () => {
             </h3>
             <p className="text-gray-300 text-lg mb-6 max-w-2xl">
               Explore AI-powered job recommendations, connect with top
-              companies, and advance your career with Madathon.
+              companies, and advance your career with Vectora — Smart Job & Freelance.
             </p>
             <button
               onClick={() => navigate("/job-recommendations")}

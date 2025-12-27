@@ -37,7 +37,7 @@ const seedJobs = async () => {
   try {
     // Connect to MongoDB
     await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/madathon"
+      process.env.MONGODB_URI || "mongodb://localhost:27017/vectora"
     );
 
     console.log("Connected to MongoDB");

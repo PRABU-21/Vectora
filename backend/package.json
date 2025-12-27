@@ -1,7 +1,7 @@
 {
-  "name": "madathon-backend",
+  "name": "vectora-backend",
   "version": "1.0.0",
-  "description": "Backend for Madathon MERN project",
+  "description": "Backend for Vectora — Smart Job & Freelance MERN project",
   "main": "server.js",
   "type": "module",
   "scripts": {
