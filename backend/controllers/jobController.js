@@ -1,5 +1,6 @@
 import Job from "../models/Job.js";
 import Embedding from "../models/Embedding.js";
+import AppliedJob from "../models/AppliedJob.js";
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 
 // Get all jobs
@@ -136,17 +137,17 @@ export const getJobRecommendations = async (req, res) => {
         // Calculate skill match boost
         const resumeContent = resumeEmbedding.content.toLowerCase();
         const jobSkills = job.skills || [];
-        
+
         // Count exact skill matches
         let exactSkillMatches = 0;
-        jobSkills.forEach(skill => {
+        jobSkills.forEach((skill) => {
           const skillLower = skill.toLowerCase().trim();
           // Check for exact skill match in resume content
           if (resumeContent.includes(skillLower)) {
             exactSkillMatches++;
           }
         });
-        
+
         // Apply boost for exact skill matches
         if (exactSkillMatches > 0) {
           // Boost factor: add 0.05 per exact skill match, max boost of 0.25
@@ -221,6 +222,155 @@ export const getJobRecommendations = async (req, res) => {
       error: "Server error while generating recommendations",
       message: error.message,
       details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+  }
+};
+
+/**
+ * Apply to a Job
+ *
+ * This endpoint handles job applications by:
+ * 1. Validating the request body
+ * 2. Checking for duplicate applications
+ * 3. Creating a new AppliedJob record
+ * 4. Returning the updated applied jobs list
+ *
+ * @route POST /api/jobs/apply
+ * @access Protected (requires authentication)
+ */
+export const applyToJob = async (req, res) => {
+  try {
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "Please log in to apply for jobs",
+      });
+    }
+
+    const userId = req.userId;
+    const { jobId, company, jobRole, match_percentage } = req.body;
+
+    // Validate required fields
+    if (!jobId || !company || !jobRole || match_percentage === undefined) {
+      return res.status(400).json({
+        error: "Invalid request",
+        message: "jobId, company, jobRole, and match_percentage are required",
+      });
+    }
+
+    console.log(`📝 User ${userId} applying to job ${jobId}`);
+
+    // Check if already applied
+    const existingApplication = await AppliedJob.findOne({ userId, jobId });
+
+    if (existingApplication) {
+      return res.status(409).json({
+        error: "Already applied",
+        message: "You have already applied to this job",
+      });
+    }
+
+    // Create new application
+    const appliedJob = new AppliedJob({
+      userId,
+      jobId,
+      company,
+      jobRole,
+      match_percentage,
+      status: "Applied",
+    });
+
+    await appliedJob.save();
+
+    console.log(`✅ Successfully applied to job ${jobId}`);
+
+    // Return all applied jobs for this user
+    const appliedJobs = await AppliedJob.find({ userId })
+      .sort({ appliedAt: -1 })
+      .lean();
+
+    // Transform for frontend
+    const transformedAppliedJobs = appliedJobs.map((job) => ({
+      jobId: job.jobId,
+      company: job.company,
+      jobRole: job.jobRole,
+      match_percentage: job.match_percentage,
+      status: job.status,
+      appliedAt: job.appliedAt,
+    }));
+
+    res.status(201).json({
+      success: true,
+      message: "Successfully applied to job",
+      appliedJobs: transformedAppliedJobs,
+    });
+  } catch (error) {
+    console.error("Error applying to job:", error);
+
+    // Handle duplicate key error (just in case)
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: "Already applied",
+        message: "You have already applied to this job",
+      });
+    }
+
+    res.status(500).json({
+      error: "Server error while applying to job",
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Get Applied Jobs for the User
+ *
+ * This endpoint retrieves all jobs the user has applied to.
+ *
+ * @route GET /api/jobs/applied
+ * @access Protected (requires authentication)
+ */
+export const getAppliedJobs = async (req, res) => {
+  try {
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "Please log in to view applied jobs",
+      });
+    }
+
+    const userId = req.userId;
+
+    console.log(`📋 Fetching applied jobs for user: ${userId}`);
+
+    // Get all applied jobs for this user
+    const appliedJobs = await AppliedJob.find({ userId })
+      .sort({ appliedAt: -1 })
+      .lean();
+
+    // Transform for frontend
+    const transformedAppliedJobs = appliedJobs.map((job) => ({
+      jobId: job.jobId,
+      company: job.company,
+      jobRole: job.jobRole,
+      match_percentage: job.match_percentage,
+      status: job.status,
+      appliedAt: job.appliedAt,
+    }));
+
+    res.json({
+      success: true,
+      appliedJobs: transformedAppliedJobs,
+      count: transformedAppliedJobs.length,
+    });
+  } catch (error) {
+    console.error("Error fetching applied jobs:", error);
+
+    res.status(500).json({
+      error: "Server error while fetching applied jobs",
+      message: error.message,
     });
   }
 };

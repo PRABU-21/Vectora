@@ -36,25 +36,41 @@ export const login = async (credentials) => {
 
 // Embeddings API calls
 export const uploadEmbedding = async (fileData) => {
-  const token = localStorage.getItem('token');
-  const response = await axios.post(`${API_URL}/embeddings/upload-embedding`, fileData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      'Authorization': `Bearer ${token}`
+  const token = localStorage.getItem("token");
+  const response = await axios.post(
+    `${API_URL}/embeddings/upload-embedding`,
+    fileData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
     }
-  });
+  );
   return response.data;
 };
 
 // Jobs API calls
 export const getJobs = async () => {
-  const response = await api.get('/jobs');
+  const response = await api.get("/jobs");
   return response.data;
 };
 
 // Get personalized job recommendations based on resume similarity
 export const getJobRecommendations = async (limit = 10) => {
   const response = await api.get(`/jobs/recommendations?limit=${limit}`);
+  return response.data;
+};
+
+// Apply to a job
+export const applyToJob = async (jobData) => {
+  const response = await api.post("/jobs/apply", jobData);
+  return response.data;
+};
+
+// Get applied jobs for the user
+export const getAppliedJobs = async () => {
+  const response = await api.get("/jobs/applied");
   return response.data;
 };
 
