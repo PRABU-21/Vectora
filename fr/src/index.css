@@ -1,5 +1,163 @@
 @import "tailwindcss";
 
+/* Global theme override: map legacy red/pink accents to a blue palette */
+:root {
+  --primary-50: #f0f9ff;
+  --primary-100: #e0f2fe;
+  --primary-200: #bae6fd;
+  --primary-300: #7dd3fc;
+  --primary-400: #38bdf8;
+  --primary-500: #0ea5e9;
+  --primary-600: #0284c7;
+  --primary-700: #0369a1;
+  --primary-800: #075985;
+  --primary-900: #0c4a6e;
+}
+
+.bg-red-50,
+.bg-rose-50,
+.bg-pink-50 { background-color: var(--primary-50) !important; }
+.bg-red-100,
+.bg-rose-100,
+.bg-pink-100 { background-color: var(--primary-100) !important; }
+.bg-red-200,
+.bg-rose-200,
+.bg-pink-200 { background-color: var(--primary-200) !important; }
+.bg-red-300,
+.bg-rose-300,
+.bg-pink-300 { background-color: var(--primary-300) !important; }
+.bg-red-400,
+.bg-rose-400,
+.bg-pink-400 { background-color: var(--primary-400) !important; }
+.bg-red-500,
+.bg-rose-500,
+.bg-pink-500 { background-color: var(--primary-500) !important; }
+.bg-red-600,
+.bg-rose-600,
+.bg-pink-600 { background-color: var(--primary-600) !important; }
+.bg-red-700,
+.bg-rose-700,
+.bg-pink-700 { background-color: var(--primary-700) !important; }
+.bg-red-800,
+.bg-rose-800,
+.bg-pink-800 { background-color: var(--primary-800) !important; }
+
+.text-red-50,
+.text-rose-50,
+.text-pink-50 { color: var(--primary-50) !important; }
+.text-red-100,
+.text-rose-100,
+.text-pink-100 { color: var(--primary-100) !important; }
+.text-red-200,
+.text-rose-200,
+.text-pink-200 { color: var(--primary-200) !important; }
+.text-red-300,
+.text-rose-300,
+.text-pink-300 { color: var(--primary-300) !important; }
+.text-red-400,
+.text-rose-400,
+.text-pink-400 { color: var(--primary-400) !important; }
+.text-red-500,
+.text-rose-500,
+.text-pink-500 { color: var(--primary-500) !important; }
+.text-red-600,
+.text-rose-600,
+.text-pink-600 { color: var(--primary-600) !important; }
+.text-red-700,
+.text-rose-700,
+.text-pink-700 { color: var(--primary-700) !important; }
+.text-red-800,
+.text-rose-800,
+.text-pink-800 { color: var(--primary-800) !important; }
+
+.border-red-50,
+.border-rose-50,
+.border-pink-50 { border-color: var(--primary-50) !important; }
+.border-red-100,
+.border-rose-100,
+.border-pink-100 { border-color: var(--primary-100) !important; }
+.border-red-200,
+.border-rose-200,
+.border-pink-200 { border-color: var(--primary-200) !important; }
+.border-red-300,
+.border-rose-300,
+.border-pink-300 { border-color: var(--primary-300) !important; }
+.border-red-400,
+.border-rose-400,
+.border-pink-400 { border-color: var(--primary-400) !important; }
+.border-red-500,
+.border-rose-500,
+.border-pink-500 { border-color: var(--primary-500) !important; }
+.border-red-600,
+.border-rose-600,
+.border-pink-600 { border-color: var(--primary-600) !important; }
+.border-red-700,
+.border-rose-700,
+.border-pink-700 { border-color: var(--primary-700) !important; }
+.border-red-800,
+.border-rose-800,
+.border-pink-800 { border-color: var(--primary-800) !important; }
+
+.from-red-500,
+.from-rose-500,
+.from-pink-500 { --tw-gradient-from: var(--primary-500) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(14 165 233 / 0)); }
+.from-red-600,
+.from-rose-600,
+.from-pink-600 { --tw-gradient-from: var(--primary-600) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(2 132 199 / 0)); }
+.from-red-700,
+.from-rose-700,
+.from-pink-700 { --tw-gradient-from: var(--primary-700) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(3 105 161 / 0)); }
+.from-red-800,
+.from-rose-800,
+.from-pink-800 { --tw-gradient-from: var(--primary-800) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(7 89 133 / 0)); }
+
+.to-red-500,
+.to-rose-500,
+.to-pink-500 { --tw-gradient-to: var(--primary-500) !important; }
+.to-red-600,
+.to-rose-600,
+.to-pink-600 { --tw-gradient-to: var(--primary-600) !important; }
+.to-red-700,
+.to-rose-700,
+.to-pink-700 { --tw-gradient-to: var(--primary-700) !important; }
+.to-red-800,
+.to-rose-800,
+.to-pink-800 { --tw-gradient-to: var(--primary-800) !important; }
+
+.via-red-600,
+.via-rose-600,
+.via-pink-600 { --tw-gradient-stops: var(--tw-gradient-from), var(--primary-600), var(--tw-gradient-to, rgb(2 132 199 / 0)); }
+.via-red-700,
+.via-rose-700,
+.via-pink-700 { --tw-gradient-stops: var(--tw-gradient-from), var(--primary-700), var(--tw-gradient-to, rgb(3 105 161 / 0)); }
+
+.hover\:from-red-600:hover,
+.hover\:from-rose-600:hover,
+.hover\:from-pink-600:hover { --tw-gradient-from: var(--primary-600) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(2 132 199 / 0)); }
+.hover\:from-red-700:hover,
+.hover\:from-rose-700:hover,
+.hover\:from-pink-700:hover { --tw-gradient-from: var(--primary-700) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(3 105 161 / 0)); }
+.hover\:to-red-600:hover,
+.hover\:to-rose-600:hover,
+.hover\:to-pink-600:hover { --tw-gradient-to: var(--primary-600) !important; }
+.hover\:to-red-700:hover,
+.hover\:to-rose-700:hover,
+.hover\:to-pink-700:hover { --tw-gradient-to: var(--primary-700) !important; }
+
+.hover\:text-red-600:hover,
+.hover\:text-rose-600:hover,
+.hover\:text-pink-600:hover { color: var(--primary-600) !important; }
+.hover\:text-red-700:hover,
+.hover\:text-rose-700:hover,
+.hover\:text-pink-700:hover { color: var(--primary-700) !important; }
+
+.focus\:ring-red-500:focus,
+.focus\:ring-rose-500:focus,
+.focus\:ring-pink-500:focus { --tw-ring-color: var(--primary-500) !important; }
+.focus\:border-red-500:focus,
+.focus\:border-rose-500:focus,
+.focus\:border-pink-500:focus { border-color: var(--primary-500) !important; }
+
 /* Custom animations for login page */
 @keyframes blob {
   0% {

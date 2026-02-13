@@ -74,6 +74,12 @@ export const getAppliedJobs = async () => {
   return response.data;
 };
 
+// LeetCode profile stats
+export const getLeetCodeProfile = async (username) => {
+  const response = await api.get(`/jobs/leetcode/${encodeURIComponent(username)}`);
+  return response.data;
+};
+
 // Resume parsing API
 export const parseResume = async (file) => {
   const formData = new FormData();

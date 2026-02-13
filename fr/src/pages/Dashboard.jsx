@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddEmbeddingsCard from "../components/AddEmbeddingsCard";
+import ParticlesBackground from "../components/ParticlesBackground";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -56,12 +57,12 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-sky-50">
       <nav className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-rose-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-600 to-indigo-700 rounded-xl flex items-center justify-center">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
@@ -76,14 +77,14 @@ const Dashboard = () => {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-sky-600 to-indigo-700 bg-clip-text text-transparent">
                 Vectora
               </h1>
             </div>
             <div className="flex items-center gap-6">
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
-                  <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                     {user.name?.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-gray-700 font-medium text-sm">
@@ -93,7 +94,7 @@ const Dashboard = () => {
               )}
               <button
                 onClick={() => navigate("/profile")}
-                className="text-gray-700 hover:text-red-600 font-medium transition-colors flex items-center gap-2"
+                className="text-gray-700 hover:text-sky-700 font-medium transition-colors flex items-center gap-2"
               >
                 <svg
                   className="w-5 h-5"
@@ -112,7 +113,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={handleLogout}
-                className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Logout
               </button>
@@ -121,17 +122,14 @@ const Dashboard = () => {
         </div>
       </nav>
 
-      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-2000"></div>
-        </div>
+      <div className="bg-gradient-to-r from-sky-400 via-blue-00 to-green-300 relative overflow-hidden">
+        <ParticlesBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
               Welcome back, {user?.name?.split(" ")[0] || "there"}! 👋
             </h1>
-            <p className="text-xl text-red-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
               Your personalized job dashboard is ready. Explore opportunities
               that match your skills and ambitions.
             </p>
@@ -146,7 +144,7 @@ const Dashboard = () => {
           </h2>
           {loading ? (
             <div className="bg-white rounded-2xl shadow-md p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
               <p className="text-gray-600 mt-4">Loading news...</p>
             </div>
           ) : news.length > 0 ? (
@@ -184,7 +182,7 @@ const Dashboard = () => {
                       href={news[currentNewsIndex]?.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block mt-4 text-red-600 hover:text-red-700 font-semibold"
+                      className="inline-block mt-4 text-sky-700 hover:text-sky-800 font-semibold"
                     >
                       Read more →
                     </a>
@@ -237,10 +235,10 @@ const Dashboard = () => {
                     key={index}
                     onClick={() => setCurrentNewsIndex(index)}
                     className={`w-2 h-2 rounded-full transition-all ${
-                      index === currentNewsIndex
-                        ? "bg-red-600 w-8"
-                        : "bg-gray-300"
-                    }`}
+                          index === currentNewsIndex
+                            ? "bg-sky-600 w-8"
+                            : "bg-gray-300"
+                        }`}
                   />
                 ))}
               </div>
@@ -260,10 +258,10 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-red-200 transform hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-rose-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+          <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-sky-200 transform hover:-translate-y-1">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-sky-500/10 to-indigo-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
             <div className="relative p-6">
-              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-rose-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <div className="w-14 h-14 bg-gradient-to-br from-sky-600 to-purple-400 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <svg
                   className="w-7 h-7 text-white"
                   fill="none"
@@ -287,7 +285,7 @@ const Dashboard = () => {
               </p>
               <button
                 onClick={() => navigate("/job-recommendations")}
-                className="w-full bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-sky-600 to-violet-500 text-white py-3 px-4 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
               >
                 View Jobs
                 <svg
@@ -354,10 +352,10 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+          <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-cyan-200 transform hover:-translate-y-1">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
             <div className="relative p-6">
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <svg
                   className="w-7 h-7 text-white"
                   fill="none"
@@ -381,7 +379,7 @@ const Dashboard = () => {
               </p>
               <button
                 onClick={() => navigate("/freelancer-module")}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-700 text-white py-3 px-4 rounded-xl font-semibold hover:from-cyan-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
                 Explore Now
                 <svg
                   className="w-4 h-4"
@@ -448,11 +446,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-8 md:p-12 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute -top-4 -right-4 w-40 h-40 bg-white rounded-full filter blur-3xl"></div>
-            <div className="absolute -bottom-4 -left-4 w-40 h-40 bg-white rounded-full filter blur-3xl"></div>
-          </div>
+        <div className="bg-gradient-to-r from-blue-500 to-gray-800 rounded-3xl p-8 md:p-12 relative overflow-hidden">
+          <ParticlesBackground id="dashboard-cta-particles" className="opacity-60" />
           <div className="relative z-10">
             <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
               Ready to take the next step?
@@ -464,7 +459,7 @@ const Dashboard = () => {
             </p>
             <button
               onClick={() => navigate("/job-recommendations")}
-              className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 inline-flex items-center gap-2"
+              className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:bg-sky-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 inline-flex items-center gap-2"
             >
               Start Exploring Jobs
               <svg

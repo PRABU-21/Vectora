@@ -1,7 +1,262 @@
+import axios from "axios";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import Job from "../models/Job.js";
 import Embedding from "../models/Embedding.js";
 import AppliedJob from "../models/AppliedJob.js";
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
+
+const JOB_API_URL = "https://www.arbeitnow.com/api/job-board-api";
+const LEETCODE_GRAPHQL = "https://leetcode.com/graphql/";
+const LEETCODE_STATS_URL = "https://leetcode-stats-api.herokuapp.com/";
+const LEETCODE_TOPICS_FALLBACK = "https://alfa-leetcode-api.vercel.app";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dataDir = path.join(__dirname, "../data");
+const jobsJsonPath = path.join(dataDir, "externalJobs.json");
+
+const ensureDataDir = () => {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+};
+
+// Fetch jobs from Arbeitnow and persist to JSON for downstream recommendations/seeding
+export const fetchExternalJobs = async (req, res) => {
+  try {
+    ensureDataDir();
+    const response = await axios.get(JOB_API_URL);
+    const jobs = response.data?.data || [];
+
+    fs.writeFileSync(jobsJsonPath, JSON.stringify(jobs, null, 2), "utf-8");
+
+    res.json({
+      success: true,
+      message: "Jobs fetched and saved successfully",
+      totalJobs: jobs.length,
+      source: "arbeitnow",
+      file: "data/externalJobs.json",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching jobs",
+      error: error.message,
+    });
+  }
+};
+
+// Read jobs from the persisted JSON file
+export const getExternalJobs = (req, res) => {
+  try {
+    if (!fs.existsSync(jobsJsonPath)) {
+      return res.status(404).json({
+        success: false,
+        message: "No jobs found. Fetch first via /api/jobs/fetch-external.",
+      });
+    }
+
+    const data = fs.readFileSync(jobsJsonPath, "utf-8");
+    const jobs = JSON.parse(data);
+
+    res.json({
+      success: true,
+      totalJobs: jobs.length,
+      jobs,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error reading jobs file",
+      error: error.message,
+    });
+  }
+};
+
+// Fetch a user's LeetCode profile and problem stats via GraphQL
+export const getLeetCodeProfile = async (req, res) => {
+  const { username } = req.params;
+
+  if (!username) {
+    return res.status(400).json({ success: false, message: "Username is required" });
+  }
+
+  const fetchFallbackStats = async () => {
+    try {
+      const fallback = await axios.get(`${LEETCODE_STATS_URL}${encodeURIComponent(username)}`);
+      if (fallback.data && fallback.data.status === "success") {
+        return {
+          success: true,
+          source: "fallback",
+          username,
+          ranking: fallback.data.ranking,
+          reputation: fallback.data.reputation,
+          starRating: null,
+          solvedStats: [
+            { difficulty: "Easy", count: fallback.data.easySolved },
+            { difficulty: "Medium", count: fallback.data.mediumSolved },
+            { difficulty: "Hard", count: fallback.data.hardSolved },
+          ],
+          overall: {
+            solvedCount: fallback.data.totalSolved,
+            totalCount: fallback.data.totalQuestions,
+            progress: [],
+          },
+          topics: [],
+        };
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  };
+
+  const fetchTopicsFallback = async () => {
+    try {
+      const resp = await axios.get(
+        `${LEETCODE_TOPICS_FALLBACK}/${encodeURIComponent(username)}/tags`,
+        { validateStatus: (s) => s >= 200 && s < 500 }
+      );
+      if (resp.status === 200 && resp.data) {
+        const topics = resp.data.topTags || resp.data.tags || resp.data.data || resp.data || [];
+        if (Array.isArray(topics)) {
+          return topics
+            .filter((t) => t?.name && (t.count || t.solved))
+            .map((t) => ({ name: t.name, solved: t.count || t.solved }));
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+    return [];
+  };
+
+  try {
+    const response = await axios.post(
+      LEETCODE_GRAPHQL,
+      {
+        query: `
+          query getUserProfile($username: String!) {
+            matchedUser(username: $username) {
+              username
+              profile {
+                ranking
+                reputation
+                starRating
+              }
+              submitStatsGlobal {
+                acSubmissionNum {
+                  difficulty
+                  count
+                }
+              }
+            }
+            userProfileUserQuestionProgressV2(userSlug: $username) {
+              solvedCount
+              totalCount
+              progress {
+                difficulty
+                solved
+                total
+              }
+            }
+            userProblemSolvedTopics(username: $username) {
+              topics {
+                name
+                solved
+              }
+            }
+          }
+        `,
+        variables: { username },
+      },
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Referer: "https://leetcode.com",
+          Origin: "https://leetcode.com",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+        withCredentials: false,
+        validateStatus: (status) => status >= 200 && status < 500,
+      }
+    );
+
+    if (response.status !== 200 || !response.data) {
+      const fallback = await fetchFallbackStats();
+      if (fallback) {
+        fallback.topics = await fetchTopicsFallback();
+        return res.json(fallback);
+      }
+
+      return res.status(response.status || 502).json({
+        success: false,
+        message: "LeetCode API did not return a valid response",
+        status: response.status,
+        body: response.data,
+      });
+    }
+
+    if (response.data?.errors?.length) {
+      const msg = response.data.errors[0]?.message || "LeetCode returned an error";
+      const fallback = await fetchFallbackStats();
+      if (fallback) {
+        fallback.topics = await fetchTopicsFallback();
+        return res.json(fallback);
+      }
+      return res.status(400).json({ success: false, message: msg, errors: response.data.errors });
+    }
+
+    const data = response.data?.data;
+
+    if (!data?.matchedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const acSubmissionNum = data.matchedUser?.submitStatsGlobal?.acSubmissionNum || [];
+    const progress = data.userProfileUserQuestionProgressV2 || {};
+    let topics = data.userProblemSolvedTopics?.topics || [];
+
+    if (!topics.length) {
+      topics = await fetchTopicsFallback();
+    }
+
+    return res.json({
+      success: true,
+      username: data.matchedUser.username,
+      ranking: data.matchedUser.profile?.ranking,
+      reputation: data.matchedUser.profile?.reputation,
+      starRating: data.matchedUser.profile?.starRating,
+      solvedStats: acSubmissionNum,
+      overall: {
+        solvedCount: progress.solvedCount,
+        totalCount: progress.totalCount,
+        progress: progress.progress || [],
+      },
+      topics,
+    });
+  } catch (error) {
+    console.error("LeetCode fetch error:", error.message);
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || "Failed to fetch LeetCode data";
+
+    const fallback = await fetchFallbackStats();
+    if (fallback) {
+      fallback.topics = await fetchTopicsFallback();
+      return res.json(fallback);
+    }
+
+    return res.status(status).json({
+      success: false,
+      message,
+      error: error.message,
+      status,
+    });
+  }
+};
 
 // Get all jobs
 export const getAllJobs = async (req, res) => {
@@ -65,6 +320,41 @@ export const getJobRecommendations = async (req, res) => {
     // Parse and validate limit parameter
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
 
+    const asGenericRecommendations = async (reason) => {
+      const genericJobs = await Job.find({}).limit(limit);
+      const recommendations = genericJobs.map((job) => ({
+        jobId: job._id.toString(),
+        jobTitle: job.jobRoleName,
+        company: job.companyName,
+        location: job.location,
+        type: job.type,
+        experience: job.experience,
+        salary: job.salary,
+        skills: job.skills,
+        description: job.description,
+        explanation:
+          job.explanation ||
+          "Job description for " + job.jobRoleName + " at " + job.companyName,
+        similarityScore: null,
+        matchPercentage: null,
+        exactSkillMatches: 0,
+      }));
+
+      return res.status(200).json({
+        success: true,
+        mode: "generic",
+        count: recommendations.length,
+        recommendations,
+        metadata: {
+          mode: "generic",
+          reason,
+          requestedLimit: limit,
+          algorithm: "fallback_no_embeddings",
+          timestamp: new Date().toISOString(),
+        },
+      });
+    };
+
     console.log(`🔍 Fetching job recommendations for user: ${userId}`);
 
     // ----------------- Step 1: Fetch User's Resume Embedding -----------------
@@ -75,18 +365,12 @@ export const getJobRecommendations = async (req, res) => {
     }).sort({ createdAt: -1 }); // Get the latest embedding
 
     if (!resumeEmbedding) {
-      return res.status(404).json({
-        error: "No resume embedding found",
-        message: "Please upload your resume first to get job recommendations",
-      });
+      return asGenericRecommendations("no_resume_embedding");
     }
 
     // Validate resume embedding
     if (!resumeEmbedding.embedding || resumeEmbedding.embedding.length === 0) {
-      return res.status(400).json({
-        error: "Invalid resume embedding",
-        message: "Resume embedding is empty or corrupted",
-      });
+      return asGenericRecommendations("invalid_resume_embedding");
     }
 
     console.log(
@@ -100,10 +384,7 @@ export const getJobRecommendations = async (req, res) => {
     });
 
     if (jobs.length === 0) {
-      return res.status(404).json({
-        error: "No jobs with embeddings found",
-        message: "No jobs available for matching at this time",
-      });
+      return asGenericRecommendations("no_job_embeddings");
     }
 
     console.log(`✅ Found ${jobs.length} jobs with embeddings`);
@@ -192,6 +473,11 @@ export const getJobRecommendations = async (req, res) => {
     // ----------------- Step 4: Sort and Limit Results -----------------
     // Sort by similarity score in descending order
     recommendations.sort((a, b) => b.similarityScore - a.similarityScore);
+
+    // If no recommendations were produced, fall back to a generic list
+    if (recommendations.length === 0) {
+      return asGenericRecommendations("no_similarity_hits");
+    }
 
     // Limit to top N recommendations
     const topRecommendations = recommendations.slice(0, limit);

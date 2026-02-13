@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../data/api";
+import ParticlesBackground from "../components/ParticlesBackground";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -36,15 +37,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex ">
       {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-red-600 via-red-700 to-rose-800 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-4000"></div>
-        </div>
+      <div className=" hidden lg:flex lg:w-1/2 bg-gradient-to-r from-indigo-500 via-purple-300 to-fuchsia-100 relative overflow-hidden">
+        <ParticlesBackground id="login-hero-particles" className="opacity-90" />
 
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="mb-8">
@@ -125,11 +121,11 @@ const Login = () => {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-gradient-to-br from-gray-50 to-white">
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-gradient-to-r from-purple-100 to-blue-100">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-rose-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-10 h-10 text-white"
                 fill="none"

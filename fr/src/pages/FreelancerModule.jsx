@@ -89,8 +89,9 @@ const FreelancerModule = () => {
       setProjects([response, ...projects]);
       setActiveTab('view-projects');
     } catch (error) {
-      setError('Failed to create project');
-      console.error('Error creating project:', error);
+      const backendMessage = error?.response?.data?.message;
+      setError(backendMessage || 'Failed to create project');
+      console.error('Error creating project:', error?.response?.data || error);
     }
   };
 

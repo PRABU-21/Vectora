@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { PROJECT_STATUSES } from '../utils/statusUtils';
 
 const ProjectForm = ({ onSubmit }) => {
+  const minDeadlineDate = new Date();
+  minDeadlineDate.setDate(minDeadlineDate.getDate() + 1); // Backend requires deadline strictly in the future
+  const minDeadline = minDeadlineDate.toISOString().split('T')[0];
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -88,6 +91,8 @@ const ProjectForm = ({ onSubmit }) => {
 
     if (!formData.deadline) {
       newErrors.deadline = 'Submission deadline is required';
+    } else if (new Date(formData.deadline) <= new Date()) {
+      newErrors.deadline = 'Deadline must be after today';
     }
 
     setErrors(newErrors);
@@ -251,8 +256,10 @@ const ProjectForm = ({ onSubmit }) => {
                 name="deadline"
                 value={formData.deadline}
                 onChange={handleChange}
+                min={minDeadline}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 ${errors.deadline ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500 focus:border-red-500'}`}
               />
+              <p className="mt-1 text-xs text-gray-500">Pick a date after today (server rejects same-day deadlines).</p>
               {errors.deadline && <p className="mt-1 text-sm text-red-600">{errors.deadline}</p>}
             </div>
           </div>

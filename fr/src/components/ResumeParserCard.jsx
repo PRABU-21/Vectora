@@ -67,7 +67,7 @@ const Field = ({ label, value, textarea }) => {
   );
 };
 
-const ResumeParserCard = ({ onSave }) => {
+const ResumeParserCard = ({ onSave, onParsed }) => {
   const [file, setFile] = useState(null);
   const [parsed, setParsed] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -89,8 +89,12 @@ const ResumeParserCard = ({ onSave }) => {
       if (!response?.success) {
         throw new Error(response?.message || "Parse failed");
       }
-      setParsed(response.profile || null);
+      const profile = response.profile || null;
+      setParsed(profile);
       if (response.notice) setNotice(response.notice);
+      if (profile && onParsed) {
+        onParsed(profile);
+      }
       setSaveMessage(null);
     } catch (err) {
       setError(err?.message || "Something went wrong while parsing your resume");

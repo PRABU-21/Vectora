@@ -6,6 +6,7 @@ import {
   applyToJob,
   getAppliedJobs,
 } from "../data/api.js";
+import ParticlesBackground from "../components/ParticlesBackground";
 
 const JobRecommendations = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const JobRecommendations = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
-
+    ``
     if (!token) {
       navigate("/login");
       return;
@@ -232,12 +233,12 @@ const JobRecommendations = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-rose-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-sky-50">
       <nav className="bg-white bg-opacity-80 backdrop-blur-lg shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-rose-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-600 to-indigo-700 rounded-xl flex items-center justify-center">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
@@ -252,14 +253,14 @@ const JobRecommendations = () => {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-sky-600 to-indigo-700 bg-clip-text text-transparent">
                 Vectora
               </h1>
             </div>
             <div className="flex items-center gap-6">
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
-                  <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                     {user.name && user.name.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-gray-700 font-medium text-sm">
@@ -269,7 +270,7 @@ const JobRecommendations = () => {
               )}
               <button
                 onClick={() => navigate("/dashboard")}
-                className="text-gray-700 hover:text-red-600 font-medium transition-colors flex items-center gap-2"
+                className="text-gray-700 hover:text-sky-600 font-medium transition-colors flex items-center gap-2"
               >
                 <svg
                   className="w-5 h-5"
@@ -288,7 +289,7 @@ const JobRecommendations = () => {
               </button>
               <button
                 onClick={() => navigate("/profile")}
-                className="text-gray-700 hover:text-red-600 font-medium transition-colors flex items-center gap-2"
+                className="text-gray-700 hover:text-sky-600 font-medium transition-colors flex items-center gap-2"
               >
                 <svg
                   className="w-5 h-5"
@@ -307,7 +308,7 @@ const JobRecommendations = () => {
               </button>
               <button
                 onClick={handleLogout}
-                className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Logout
               </button>
@@ -316,12 +317,8 @@ const JobRecommendations = () => {
         </div>
       </nav>
 
-      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-4000"></div>
-        </div>
+      <div className="bg-gradient-to-r from-sky-700 via-blue-700 to-indigo-800 relative overflow-hidden">
+        <ParticlesBackground id="jobs-hero-particles" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="text-center">
             <div className="w-20 h-20 bg-white bg-opacity-20 backdrop-blur-lg rounded-2xl flex items-center justify-center mx-auto mb-6 border-2 border-white border-opacity-30">
@@ -345,7 +342,7 @@ const JobRecommendations = () => {
                 ? "Your Personalized Matches"
                 : "Job Recommendations"}
             </h1>
-            <p className="text-xl text-rose-100 max-w-2xl mx-auto mb-8">
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
               {loading
                 ? "Loading opportunities..."
                 : isPersonalized
@@ -356,14 +353,14 @@ const JobRecommendations = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {!isPersonalized && (
                 <button
-                  className="group bg-white text-red-600 py-4 px-10 rounded-2xl font-bold text-lg hover:bg-red-50 transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 transform hover:-translate-y-1 hover:scale-105 min-w-[280px]"
+                  className="group bg-white text-sky-700 py-4 px-10 rounded-2xl font-bold text-lg hover:bg-sky-50 transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 transform hover:-translate-y-1 hover:scale-105 min-w-[280px]"
                   onClick={handleGetRecommendations}
                   disabled={loading}
                 >
                   <svg
                     className="w-7 h-7 group-hover:scale-110 transition-transform"
                     fill="none"
-                    stroke="#dc2626"
+                    stroke="#0284c7"
                     viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -381,7 +378,7 @@ const JobRecommendations = () => {
               {isPersonalized && (
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button
-                    className="group bg-white text-red-600 py-3 px-8 rounded-xl font-semibold hover:bg-red-50 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
+                    className="group bg-white text-sky-700 py-3 px-8 rounded-xl font-semibold hover:bg-sky-50 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
                     onClick={handleGetRecommendations}
                     disabled={loading}
                   >
@@ -474,7 +471,7 @@ const JobRecommendations = () => {
                   <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     {isPersonalized && (
                       <svg
-                        className="w-7 h-7 text-red-600"
+                        className="w-7 h-7 text-sky-600"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -501,11 +498,11 @@ const JobRecommendations = () => {
             </div>
 
             {error && (
-              <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-2xl p-6 mb-8">
+              <div className="bg-gradient-to-r from-sky-50 to-indigo-50 border-2 border-sky-200 rounded-2xl p-6 mb-8">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-6 h-6 text-red-600"
+                      className="w-6 h-6 text-sky-700"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -519,14 +516,14 @@ const JobRecommendations = () => {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-red-800 text-lg mb-1">
+                    <h3 className="font-bold text-sky-900 text-lg mb-1">
                       Unable to Load Recommendations
                     </h3>
-                    <p className="text-red-700 mb-3">{error}</p>
+                    <p className="text-sky-800 mb-3">{error}</p>
                     {error.includes("resume") && (
                       <button
                         onClick={() => navigate("/add-embeddings")}
-                        className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-md inline-flex items-center gap-2"
+                        className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md inline-flex items-center gap-2"
                       >
                         <svg
                           className="w-4 h-4"
@@ -552,8 +549,8 @@ const JobRecommendations = () => {
             {loading ? (
               <div className="flex flex-col justify-center items-center h-64">
                 <div className="relative">
-                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-200"></div>
-                  <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-red-600 absolute top-0"></div>
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-sky-200"></div>
+                  <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-sky-600 absolute top-0"></div>
                 </div>
                 <p className="mt-4 text-gray-600 font-medium">
                   Finding perfect matches...
@@ -564,7 +561,7 @@ const JobRecommendations = () => {
                 {jobs.map((job, index) => (
                   <div
                     key={job.id || job.jobId}
-                    className="group bg-white rounded-2xl shadow-md border border-gray-200 hover:shadow-2xl hover:border-red-300 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden transform hover:-translate-y-1"
+                    className="group bg-white rounded-2xl shadow-md border border-gray-200 hover:shadow-2xl hover:border-sky-300 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden transform hover:-translate-y-1"
                     onClick={() => handleJobClick(job)}
                   >
                     <div
@@ -575,7 +572,7 @@ const JobRecommendations = () => {
                             : index === 1
                             ? "bg-gradient-to-r from-gray-400 to-gray-600"
                             : "bg-gradient-to-r from-orange-400 to-orange-600"
-                          : "bg-gradient-to-r from-red-400 to-rose-600"
+                          : "bg-gradient-to-r from-sky-400 to-indigo-600"
                       }`}
                     ></div>
 
@@ -619,10 +616,10 @@ const JobRecommendations = () => {
                       )}
 
                       <div className="mb-4">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-sky-700 transition-colors">
                           {job.title || job.jobTitle}
                         </h3>
-                        <p className="text-red-600 font-semibold mb-2 flex items-center gap-2">
+                        <p className="text-sky-700 font-semibold mb-2 flex items-center gap-2">
                           <svg
                             className="w-4 h-4"
                             fill="none"
@@ -661,7 +658,7 @@ const JobRecommendations = () => {
                           {job.location}
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium">
+                          <span className="bg-sky-50 text-sky-700 px-3 py-1 rounded-full font-medium">
                             {job.type}
                           </span>
                           <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
@@ -704,7 +701,7 @@ const JobRecommendations = () => {
                             job.skills.slice(0, 5).map((skill, skillIndex) => (
                               <span
                                 key={skillIndex}
-                                className="bg-gradient-to-r from-red-50 to-rose-50 text-red-700 text-xs px-2.5 py-1 rounded-lg font-medium border border-red-200"
+                                className="bg-gradient-to-r from-sky-50 to-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-lg font-medium border border-indigo-200"
                               >
                                 {skill}
                               </span>
@@ -728,7 +725,7 @@ const JobRecommendations = () => {
                         className={`w-full py-3 px-4 rounded-xl font-semibold transition-all shadow-md group-hover:shadow-lg flex items-center justify-center gap-2 ${
                           isJobApplied(job.id || job._id || job.jobId)
                             ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                            : "bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700"
+                            : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
                         }`}
                       >
                         {isJobApplied(job.id) ? (
@@ -836,7 +833,7 @@ const JobRecommendations = () => {
                             <h4 className="font-bold text-gray-900 mb-1">
                               {appliedJob.jobRole}
                             </h4>
-                            <p className="text-sm text-red-600 font-semibold flex items-center gap-1">
+                            <p className="text-sm text-sky-700 font-semibold flex items-center gap-1">
                               <svg
                                 className="w-3 h-3"
                                 fill="none"
@@ -905,7 +902,7 @@ const JobRecommendations = () => {
             className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${
               toast.type === "success"
                 ? "bg-gradient-to-r from-green-600 to-emerald-600"
-                : "bg-gradient-to-r from-red-600 to-rose-600"
+                : "bg-gradient-to-r from-sky-600 to-indigo-700"
             } text-white`}
           >
             {toast.type === "success" ? (
@@ -933,7 +930,7 @@ const JobRecommendations = () => {
       {selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-hidden shadow-2xl">
-            <div className="bg-gradient-to-r from-red-600 to-rose-600 px-8 py-6 relative">
+            <div className="bg-gradient-to-r from-sky-600 to-indigo-800 px-8 py-6 relative">
               <div className="absolute inset-0 opacity-10">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-3xl"></div>
               </div>
@@ -943,7 +940,7 @@ const JobRecommendations = () => {
                     <h3 className="text-3xl font-bold text-white mb-2">
                       {selectedJob.title || selectedJob.jobTitle}
                     </h3>
-                    <p className="text-rose-100 font-semibold text-lg flex items-center gap-2">
+                    <p className="text-blue-100 font-semibold text-lg flex items-center gap-2">
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -1006,9 +1003,9 @@ const JobRecommendations = () => {
               <div className="p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                   <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-4">
-                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
                       <svg
-                        className="w-5 h-5 text-red-600"
+                        className="w-5 h-5 text-sky-700"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -1118,9 +1115,9 @@ const JobRecommendations = () => {
 
                 <div className="mb-8">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
                       <svg
-                        className="w-4 h-4 text-red-600"
+                        className="w-4 h-4 text-sky-700"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -1144,9 +1141,9 @@ const JobRecommendations = () => {
 
                 <div className="mb-8">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
                       <svg
-                        className="w-4 h-4 text-rose-600"
+                        className="w-4 h-4 text-sky-700"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -1168,7 +1165,7 @@ const JobRecommendations = () => {
                       selectedJob.skills.map((skill, index) => (
                         <span
                           key={index}
-                          className="bg-gradient-to-r from-red-50 to-rose-50 text-red-700 px-4 py-2 rounded-xl font-medium border border-red-200"
+                          className="bg-gradient-to-r from-sky-50 to-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-medium border border-indigo-200"
                         >
                           {skill}
                         </span>
@@ -1195,7 +1192,7 @@ const JobRecommendations = () => {
                         selectedJob.id || selectedJob._id || selectedJob.jobId
                       )
                         ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700"
+                        : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
                     }`}
                   >
                     {isJobApplied(selectedJob.id) ? (

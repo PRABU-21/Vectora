@@ -13,18 +13,75 @@ const model = (() => {
   return genAI.getGenerativeModel({ model: "models/gemini-2.5-flash" });
 })();
 
-const fallbackProfile = (text = "") => ({
-  full_name: "",
-  email: text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}/)?.[0] || "",
-  phone_number: text.match(/(\+91[\s-]?)?\d{10}/)?.[0] || "",
-  skills: [],
-  education: [],
-  experience: [],
-  projects: [],
-  certifications: [],
-  achievements: [],
-  areas_of_interest: [],
-});
+const fallbackProfile = (text = "") => {
+  const email = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}/)?.[0] || "";
+  const phone_number = text.match(/(\+91[\s-]?)?\d{10}/)?.[0] || "";
+
+  const lines = (text || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const headers = [
+    "experience",
+    "education",
+    "projects",
+    "skills",
+    "certifications",
+    "achievements",
+    "areas of interest",
+    "languages",
+    "frameworks",
+    "tools",
+  ];
+
+  const isHeader = (line = "") => headers.some((h) => line.toLowerCase().startsWith(h));
+
+  const findSection = (label) => {
+    const idx = lines.findIndex((l) => l.toLowerCase().startsWith(label));
+    if (idx === -1) return [];
+    const next = lines.slice(idx + 1).findIndex((l) => isHeader(l));
+    const sliceEnd = next === -1 ? lines.length : idx + 1 + next;
+    return lines.slice(idx + 1, sliceEnd);
+  };
+
+  const tokenizeList = (sectionLines = []) =>
+    sectionLines
+      .join(" ")
+      .split(/[|•,;\-]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 1);
+
+  const skills = findSection("skills");
+  const areas_of_interest = findSection("areas of interest");
+  const certifications = findSection("certifications");
+  const achievements = findSection("achievements");
+  const projects = findSection("projects");
+  const experience = findSection("experience");
+  const education = findSection("education");
+
+  const nameCandidate = lines.find((l) => {
+    const lower = l.toLowerCase();
+    if (l.length < 3 || l.length > 80) return false;
+    if (l.includes("@") || /\d/.test(l)) return false;
+    if (lower.includes("experience") || lower.includes("skills") || lower.includes("education")) return false;
+    if (lower.includes("project") || lower.includes("certification") || lower.includes("achievement")) return false;
+    return /^[A-Za-z][A-Za-z\s.'-]{1,}$/.test(l);
+  });
+
+  return {
+    full_name: nameCandidate || "",
+    email,
+    phone_number,
+    skills,
+    education,
+    experience,
+    projects,
+    certifications,
+    achievements,
+    areas_of_interest,
+  };
+};
 
 const extractText = async (filePath, originalName) => {
   const lower = originalName?.toLowerCase() || "";
@@ -32,6 +89,7 @@ const extractText = async (filePath, originalName) => {
   if (lower.endsWith(".pdf")) {
     const buffer = fs.readFileSync(filePath);
     const data = await pdfParse(buffer);
+    console.log(data);
     return data.text || "";
   }
 
@@ -62,7 +120,7 @@ Schema:
   "projects": [],
   "certifications": [],
   "achievements": [],
-  "areas_of_interest": []
+  "areas_of_interest": [] 
 }
 
 Rules:

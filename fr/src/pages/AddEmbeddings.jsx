@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadEmbedding } from "../data/api";
+import ParticlesBackground from "../components/ParticlesBackground";
 
 const AddEmbeddings = () => {
   const navigate = useNavigate();
@@ -155,10 +156,7 @@ const AddEmbeddings = () => {
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-2000"></div>
-        </div>
+        <ParticlesBackground id="embeddings-hero-particles" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="text-center">
             <div className="w-20 h-20 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center mx-auto mb-6 border-2 border-white/30">

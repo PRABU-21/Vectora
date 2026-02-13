@@ -2,23 +2,33 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ResumeParserCard from "../components/ResumeParserCard";
-import { getParsedProfile } from "../data/api";
+import { getParsedProfile, saveParsedProfile, getLeetCodeProfile } from "../data/api";
+import ParticlesBackground from "../components/ParticlesBackground";
 
-const InfoField = ({ label, value, spanFull }) => (
+const InfoField = ({ label, value, onChange, textarea, spanFull, placeholder }) => (
   <div className={`group ${spanFull ? "md:col-span-2" : ""}`}>
     <label className="block text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
-      <svg
-        className="w-4 h-4 text-red-500"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
+      <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
       </svg>
       {label}
     </label>
-    <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 group-hover:border-red-200 transition-colors min-h-[48px]">
-      <p className="text-lg text-gray-900 font-medium whitespace-pre-line">{value || ""}</p>
-    </div>
+    {textarea ? (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={3}
+        placeholder={placeholder}
+        className="w-full bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+      />
+    ) : (
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+      />
+    )}
   </div>
 );
 
@@ -49,6 +59,56 @@ const formatMultiline = (data) => {
   return formatEntry(data);
 };
 
+const extractLeetCodeHandle = (profile) => {
+  if (!profile || typeof profile !== "object") return "";
+
+  const candidates = [
+    profile.leetcode,
+    profile.leetcode_profile,
+    profile.leetCode,
+    profile.leetcodeId,
+    profile.leetcode_handle,
+    profile.leetcodeHandle,
+    profile.leetcodeUsername,
+    profile.leetcode_user,
+    profile.leetcode_user_id,
+    profile.leetcode_userid,
+    profile.leetcodeUrl,
+  ];
+
+  if (profile.socials && typeof profile.socials === "object") {
+    candidates.push(profile.socials.leetcode, profile.socials.LeetCode);
+  }
+
+  if (Array.isArray(profile.links)) {
+    candidates.push(
+      ...profile.links.filter(Boolean).map((v) => (typeof v === "string" ? v : v.url || ""))
+    );
+  }
+
+  // Flatten nested objects that may contain URLs
+  Object.values(profile).forEach((val) => {
+    if (typeof val === "string") {
+      candidates.push(val);
+    }
+  });
+
+  const cleaned = candidates
+    .filter(Boolean)
+    .map((v) => String(v).trim())
+    .filter((v) => v.toLowerCase().includes("leetcode"));
+
+  for (const value of cleaned) {
+    const urlMatch = value.match(/leetcode\.com\/(u\/)?([A-Za-z0-9_-]+)/i);
+    if (urlMatch?.[2]) return urlMatch[2];
+
+    const textMatch = value.match(/leetcode\s*[:@\/-]\s*([A-Za-z0-9_-]+)/i);
+    if (textMatch?.[1]) return textMatch[1];
+  }
+
+  return "";
+};
+
 const Profile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -56,7 +116,53 @@ const Profile = () => {
   const [uploadMessage, setUploadMessage] = useState("");
   const [parsedProfile, setParsedProfile] = useState(null);
   const [parsedLoading, setParsedLoading] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [leetcodeUsername, setLeetcodeUsername] = useState("");
+  const [leetcodeData, setLeetcodeData] = useState(null);
+  const [leetcodeLoading, setLeetcodeLoading] = useState(false);
+  const [leetcodeError, setLeetcodeError] = useState("");
   const personalInfoRef = useRef(null);
+
+  const [editableProfile, setEditableProfile] = useState({
+    full_name: "",
+    email: "",
+    phone_number: "",
+    areas_of_interest: "",
+    skills: "",
+    education: "",
+    experience: "",
+    projects: "",
+    certifications: "",
+    achievements: "",
+  });
+
+  const listToString = (value) => {
+    if (!value) return "";
+    if (Array.isArray(value)) return value.map(formatEntry).filter(Boolean).join(", ");
+    return formatEntry(value);
+  };
+
+  const linesToString = (value) => {
+    if (!value) return "";
+    if (Array.isArray(value)) return value.map(formatEntry).filter(Boolean).join("\n");
+    return formatEntry(value);
+  };
+
+  const hydrateEditable = (profile) => {
+    setEditableProfile({
+      full_name: profile?.full_name || "",
+      email: profile?.email || user?.email || "",
+      phone_number: profile?.phone_number || user?.phoneNumber || "",
+      areas_of_interest: listToString(profile?.areas_of_interest),
+      skills: listToString(profile?.skills),
+      education: linesToString(profile?.education),
+      experience: linesToString(profile?.experience),
+      projects: linesToString(profile?.projects),
+      certifications: listToString(profile?.certifications),
+      achievements: listToString(profile?.achievements),
+    });
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -71,12 +177,20 @@ const Profile = () => {
       setUser(JSON.parse(userData));
     }
 
+    if (!leetcodeUsername && userData) {
+      const parsedUser = JSON.parse(userData);
+      if (parsedUser?.username) {
+        setLeetcodeUsername(parsedUser.username);
+      }
+    }
+
     const loadParsedProfile = async () => {
       try {
         setParsedLoading(true);
         const response = await getParsedProfile();
         if (response?.success) {
           setParsedProfile(response.profile);
+          hydrateEditable(response.profile);
         }
       } catch (err) {
         // ignore fetch errors silently
@@ -87,6 +201,37 @@ const Profile = () => {
 
     loadParsedProfile();
   }, [navigate]);
+
+  useEffect(() => {
+    if (!leetcodeUsername && parsedProfile) {
+      const detected = extractLeetCodeHandle(parsedProfile);
+      if (detected) {
+        setLeetcodeUsername(detected);
+      }
+    }
+  }, [parsedProfile, leetcodeUsername]);
+
+  const handleLeetcodeFetch = async () => {
+    const username = leetcodeUsername.trim();
+    if (!username) {
+      setLeetcodeError("Enter a LeetCode username");
+      return;
+    }
+
+    setLeetcodeLoading(true);
+    setLeetcodeError("");
+    try {
+      const data = await getLeetCodeProfile(username);
+      setLeetcodeData(data);
+    } catch (err) {
+      setLeetcodeData(null);
+      setLeetcodeError(
+        err?.response?.data?.message || err?.message || "Failed to fetch LeetCode data"
+      );
+    } finally {
+      setLeetcodeLoading(false);
+    }
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -140,10 +285,57 @@ const Profile = () => {
 
   const handleParsedSave = (profile) => {
     setParsedProfile(profile);
-    // Scroll to personal info to show updated fields
+    hydrateEditable(profile);
     requestAnimationFrame(() => {
       personalInfoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const buildPayload = () => {
+    const splitComma = (val) =>
+      val
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
+
+    const splitLines = (val) =>
+      val
+        .split(/\r?\n/)
+        .map((v) => v.trim())
+        .filter(Boolean);
+
+    return {
+      full_name: editableProfile.full_name.trim(),
+      email: editableProfile.email.trim(),
+      phone_number: editableProfile.phone_number.trim(),
+      areas_of_interest: splitComma(editableProfile.areas_of_interest),
+      skills: splitComma(editableProfile.skills),
+      education: splitLines(editableProfile.education),
+      experience: splitLines(editableProfile.experience),
+      projects: splitLines(editableProfile.projects),
+      certifications: splitComma(editableProfile.certifications),
+      achievements: splitComma(editableProfile.achievements),
+    };
+  };
+
+  const handleManualSave = async () => {
+    setSavingProfile(true);
+    setSaveMessage("");
+    try {
+      const payload = buildPayload();
+      const response = await saveParsedProfile(payload);
+      if (response?.success) {
+        setParsedProfile(response.profile);
+        hydrateEditable(response.profile);
+        setSaveMessage("Profile saved successfully");
+      } else {
+        setSaveMessage(response?.message || "Failed to save profile");
+      }
+    } catch (err) {
+      setSaveMessage(err?.response?.data?.message || "Failed to save profile");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   return (
@@ -214,15 +406,12 @@ const Profile = () => {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-2000"></div>
-        </div>
+      <div className="bg-gradient-to-br from-blue-400 via-violet-400 to-pink-700 relative overflow-hidden">
+        <ParticlesBackground id="profile-hero-particles" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-20 h-20 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center border-2 border-white/30">
-              <span className="text-4xl font-bold text-white">
+            <div className="w-20 h-20 bg-gradient-to-br from-indigo-200 via-blue-200 to-purple-200 backdrop-blur-lg rounded-2xl flex items-center justify-center border-2 border-white/40 shadow-lg shadow-white/20">
+              <span className="text-4xl font-bold text-indigo-900">
                 {user?.name?.charAt(0).toUpperCase()}
               </span>
             </div>
@@ -230,7 +419,7 @@ const Profile = () => {
               <h1 className="text-3xl md:text-4xl font-bold text-white">
                 {user?.name}
               </h1>
-              <p className="text-red-100 text-lg">{user?.email}</p>
+              <p className="text-indigo-100 text-lg">{user?.email}</p>
             </div>
           </div>
         </div>
@@ -264,16 +453,32 @@ const Profile = () => {
               {user && (
                 <div className="p-6 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InfoField label="Full Name" value={user.name} />
-                    <InfoField label="Email Address" value={user.email} />
-                    <InfoField label="Phone Number" value={user.phoneNumber} spanFull />
-                    <InfoField label="Areas of Interest" value={formatList(parsedProfile?.areas_of_interest)} spanFull />
-                    <InfoField label="Skills" value={formatList(parsedProfile?.skills)} spanFull />
-                    <InfoField label="Education" value={formatMultiline(parsedProfile?.education)} spanFull />
-                    <InfoField label="Experience" value={formatMultiline(parsedProfile?.experience)} spanFull />
-                    <InfoField label="Projects" value={formatMultiline(parsedProfile?.projects)} spanFull />
-                    <InfoField label="Certifications" value={formatList(parsedProfile?.certifications)} spanFull />
-                    <InfoField label="Achievements" value={formatList(parsedProfile?.achievements)} spanFull />
+                    <InfoField label="Full Name" value={editableProfile.full_name} onChange={(v) => setEditableProfile((p) => ({ ...p, full_name: v }))} />
+                    <InfoField label="Email Address" value={editableProfile.email} onChange={(v) => setEditableProfile((p) => ({ ...p, email: v }))} />
+                    <InfoField label="Phone Number" value={editableProfile.phone_number} onChange={(v) => setEditableProfile((p) => ({ ...p, phone_number: v }))} spanFull />
+                    <InfoField label="Areas of Interest" value={editableProfile.areas_of_interest} onChange={(v) => setEditableProfile((p) => ({ ...p, areas_of_interest: v }))} spanFull placeholder="Comma-separated" />
+                    <InfoField label="Skills" value={editableProfile.skills} onChange={(v) => setEditableProfile((p) => ({ ...p, skills: v }))} spanFull placeholder="Comma-separated" />
+                    <InfoField label="Education" value={editableProfile.education} onChange={(v) => setEditableProfile((p) => ({ ...p, education: v }))} textarea spanFull placeholder="One entry per line" />
+                    <InfoField label="Experience" value={editableProfile.experience} onChange={(v) => setEditableProfile((p) => ({ ...p, experience: v }))} textarea spanFull placeholder="One role per line" />
+                    <InfoField label="Projects" value={editableProfile.projects} onChange={(v) => setEditableProfile((p) => ({ ...p, projects: v }))} textarea spanFull placeholder="One project per line" />
+                    <InfoField label="Certifications" value={editableProfile.certifications} onChange={(v) => setEditableProfile((p) => ({ ...p, certifications: v }))} spanFull placeholder="Comma-separated" />
+                    <InfoField label="Achievements" value={editableProfile.achievements} onChange={(v) => setEditableProfile((p) => ({ ...p, achievements: v }))} spanFull placeholder="Comma-separated" />
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 justify-end">
+                    {saveMessage && (
+                      <div className={`text-sm px-3 py-2 rounded-lg ${saveMessage.includes("success") ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                        {saveMessage}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleManualSave}
+                      disabled={savingProfile}
+                      className="px-5 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-semibold hover:from-emerald-700 hover:to-green-700 transition disabled:opacity-60"
+                    >
+                      {savingProfile ? "Saving..." : "Save Profile"}
+                    </button>
                   </div>
                 </div>
               )}
@@ -462,14 +667,17 @@ const Profile = () => {
             </div>
 
             {/* AI Resume Parser */}
-            <ResumeParserCard onSave={handleParsedSave} />
+            <ResumeParserCard onSave={handleParsedSave} onParsed={hydrateEditable} />
           </div>
 
           {/* Right Column - Profile Stats & Actions */}
           <div className="space-y-6">
+
             {/* Profile Strength Card */}
-            <div className="bg-gradient-to-br from-red-600 to-rose-600 rounded-2xl shadow-lg p-6 text-white">
+            <div className="bg-gradient-to-br from-sky-400 to-purple-500 rounded-2xl shadow-lg p-6 text-white">
+              
               <h3 className="text-lg font-semibold mb-4">Profile Strength</h3>
+              
               <div className="relative pt-1">
                 <div className="flex mb-2 items-center justify-between">
                   <div>
@@ -494,6 +702,45 @@ const Profile = () => {
                 Quick Actions
               </h3>
               <div className="space-y-3">
+                <button
+                  onClick={() => navigate("/resume-builder")}
+                  className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white hover:from-indigo-50 hover:to-purple-50 rounded-xl border border-gray-200 hover:border-indigo-300 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-100 group-hover:bg-indigo-200 rounded-lg flex items-center justify-center transition-colors">
+                      <svg
+                        className="w-5 h-5 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7h8M8 11h5m-6 7h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v11"
+                        />
+                      </svg>
+                    </div>
+                    <span className="font-semibold text-gray-700 group-hover:text-indigo-800 transition-colors">
+                      Build / Export Resume
+                    </span>
+                  </div>
+                  <svg
+                    className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+
                 <button
                   onClick={() => navigate("/job-recommendations")}
                   className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white hover:from-red-50 hover:to-rose-50 rounded-xl border border-gray-200 hover:border-red-300 transition-all group"
@@ -572,6 +819,97 @@ const Profile = () => {
                   </svg>
                 </button>
               </div>
+            </div>
+
+            {/* LeetCode Stats */}
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">LeetCode Stats</h3>
+                  <p className="text-sm text-gray-500">Track solved problems and ranking</p>
+                </div>
+                <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                  Beta
+                </span>
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-3">
+                <input
+                  value={leetcodeUsername}
+                  onChange={(e) => setLeetcodeUsername(e.target.value)}
+                  placeholder="Enter LeetCode username"
+                  className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 bg-gray-50 focus:bg-white focus:border-red-300 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleLeetcodeFetch}
+                  disabled={leetcodeLoading}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold shadow-md hover:from-red-700 hover:to-rose-700 transition disabled:opacity-60"
+                >
+                  {leetcodeLoading ? "Fetching..." : "Fetch"}
+                </button>
+              </div>
+
+              {leetcodeError && (
+                <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {leetcodeError}
+                </div>
+              )}
+
+              {leetcodeData && leetcodeData.success && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-white border border-indigo-100">
+                      <p className="text-xs text-gray-500">Ranking</p>
+                      <p className="text-xl font-semibold text-indigo-700">{leetcodeData.ranking ?? "-"}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-white border border-emerald-100">
+                      <p className="text-xs text-gray-500">Reputation</p>
+                      <p className="text-xl font-semibold text-emerald-700">{leetcodeData.reputation ?? "-"}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-amber-50 to-white border border-amber-100">
+                      <p className="text-xs text-gray-500">Star Rating</p>
+                      <p className="text-xl font-semibold text-amber-700">{leetcodeData.starRating ?? "-"}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-blue-50 to-white border border-blue-100">
+                      <p className="text-xs text-gray-500">Solved / Total</p>
+                      <p className="text-xl font-semibold text-blue-700">
+                        {leetcodeData.overall?.solvedCount ?? 0} / {leetcodeData.overall?.totalCount ?? 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-800">By Difficulty</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {(leetcodeData.solvedStats || []).map((stat) => (
+                        <div key={stat.difficulty} className="rounded-lg bg-white border border-gray-200 p-3">
+                          <p className="text-xs text-gray-500">{stat.difficulty}</p>
+                          <p className="text-lg font-semibold text-gray-800">{stat.count}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {leetcodeData.topics?.length > 0 && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-4">
+                      <p className="text-sm font-semibold text-gray-800 mb-3">Top Topics</p>
+                      <div className="flex flex-wrap gap-2">
+                        {leetcodeData.topics.slice(0, 8).map((topic) => (
+                          <span
+                            key={topic.name}
+                            className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-100"
+                          >
+                            {topic.name} ({topic.solved})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Help Card */}
