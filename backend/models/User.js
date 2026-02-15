@@ -81,6 +81,64 @@ const userSchema = new mongoose.Schema({
     type: Object,
     default: {},
   },
+  // GitHub OAuth Fields
+  githubId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  githubUsername: {
+    type: String,
+    sparse: true,
+  },
+  githubProfileUrl: {
+    type: String,
+  },
+  githubAccessToken: {
+    type: String,
+    select: false,
+  },
+  // GitHub Profile Data
+  githubProfile: {
+    name: String,
+    bio: String,
+    avatar_url: String,
+    location: String,
+    company: String,
+    blog: String,
+    public_repos: Number,
+    followers: Number,
+    following: Number,
+    created_at: Date,
+    updated_at: Date,
+  },
+  // GitHub Activity Stats
+  githubStats: {
+    commits: { type: Number, default: 0 },
+    prs: { type: Number, default: 0 },
+    issues: { type: Number, default: 0 },
+    reviews: { type: Number, default: 0 },
+  },
+  // GitHub Repository Data
+  githubRepositories: {
+    totalRepos: { type: Number, default: 0 },
+    totalStars: { type: Number, default: 0 },
+    totalForks: { type: Number, default: 0 },
+    topRepos: [{
+      name: String,
+      url: String,
+      stars: Number,
+      forks: Number,
+      language: String,
+      description: String,
+    }],
+    languages: mongoose.Schema.Types.Mixed,
+  },
+  // Last sync timestamp
+  lastGithubSync: {
+    type: Date,
+    default: Date.now,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -89,7 +147,8 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  // Only hash if password is modified and not a GitHub OAuth user
+  if (!this.isModified("password") || this.githubId) return next();
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
