@@ -12,6 +12,7 @@ import proposalRoutes from "./routes/proposalRoutes.js";
 import freelancerRoutes from "./routes/freelancerRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,7 @@ app.use("/api/proposals", proposalRoutes);
 app.use("/api/freelancers", freelancerRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/resume", resumeRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Database connection
 const connectDB = async () => {

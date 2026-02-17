@@ -29,7 +29,9 @@ const FreelancerModule = () => {
   const [deliveryErrors, setDeliveryErrors] = useState({});
   const [deliveryAcknowledged, setDeliveryAcknowledged] = useState({});
 
+
   // Sample proposals data for demonstration (removed — using live API)
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -39,12 +41,14 @@ const FreelancerModule = () => {
     }
     setError(null);
 
+
     if (activeTab === 'my-proposals') {
       fetchMyProposals();
     } else {
       fetchProjects();
     }
   }, [activeTab]);
+
 
   const fetchMyProposals = async () => {
     try {
@@ -58,6 +62,7 @@ const FreelancerModule = () => {
       setLoading(false);
     }
   };
+
 
   const fetchProjects = async () => {
     try {
@@ -292,54 +297,88 @@ const FreelancerModule = () => {
           <p className="text-xl text-gray-600">Manage your projects, tenders, and freelance opportunities</p>
         </div>
 
-        {/* Quick Navigation */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          <button
-            onClick={() => setActiveTab('post-project')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'post-project'
-              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-          >
-            Post Project
-          </button>
-          <button
-            onClick={() => setActiveTab('view-projects')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'view-projects'
-              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-          >
-            View Projects
-          </button>
-          <button
-            onClick={() => setActiveTab('my-projects')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'my-projects'
-              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-          >
-            My Projects
-          </button>
-          <button
-            onClick={() => setActiveTab('my-proposals')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'my-proposals'
-              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-          >
-            My Proposals
-          </button>
-          <button
-            onClick={() => setActiveTab('in-progress')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'in-progress'
-              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-          >
-            In Progress
-          </button>
+        {/* Quick Navigation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Card 1: Project Management */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3">
+              <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">Project Management</h2>
+                <p className="text-sm text-gray-500">Post and manage your projects</p>
+              </div>
+            </div>
 
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setActiveTab('post-project')}
+                className={`flex-1 min-w-[140px] px-4 py-3 rounded-lg font-medium transition-all text-sm ${activeTab === 'post-project'
+                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md transform scale-[1.02]'
+                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-white hover:border-red-200 hover:shadow-sm'
+                  }`}
+              >
+                Post Project
+              </button>
+              <button
+                onClick={() => setActiveTab('my-projects')}
+                className={`flex-1 min-w-[140px] px-4 py-3 rounded-lg font-medium transition-all text-sm ${activeTab === 'my-projects'
+                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md transform scale-[1.02]'
+                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-white hover:border-red-200 hover:shadow-sm'
+                  }`}
+              >
+                My Projects
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Freelance Workspace */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">Freelance Workspace</h2>
+                <p className="text-sm text-gray-500">Find work and manage proposals</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setActiveTab('view-projects')}
+                className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg font-medium transition-all text-sm ${activeTab === 'view-projects'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
+                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-white hover:border-blue-200 hover:shadow-sm'
+                  }`}
+              >
+                View Projects
+              </button>
+              <button
+                onClick={() => setActiveTab('in-progress')}
+                className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg font-medium transition-all text-sm ${activeTab === 'in-progress'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
+                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-white hover:border-blue-200 hover:shadow-sm'
+                  }`}
+              >
+                In Progress
+              </button>
+              <button
+                onClick={() => setActiveTab('my-proposals')}
+                className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg font-medium transition-all text-sm ${activeTab === 'my-proposals'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
+                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-white hover:border-blue-200 hover:shadow-sm'
+                  }`}
+              >
+                My Proposals
+              </button>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -381,6 +420,7 @@ const FreelancerModule = () => {
                     </div>
                   </div>
 
+
                   {proposals.length > 0 ? (
                     <div className="space-y-4">
                       {proposals.map((proposal) => (
@@ -394,6 +434,7 @@ const FreelancerModule = () => {
                                 </span>
                               </div>
                               <p className="text-gray-600 mb-3">{proposal.description}</p>
+
 
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                                 <div>

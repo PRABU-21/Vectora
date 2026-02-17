@@ -104,6 +104,14 @@ export const getParsedProfile = async () => {
   return response.data;
 };
 
+// Chat assistant
+export const sendChatMessage = async ({ message, jobId }) => {
+  const payload = { message };
+  if (jobId) payload.jobId = jobId;
+  const response = await api.post("/chat", payload);
+  return response.data;
+};
+
 // Project API calls
 export const getProjects = async (queryString = "") => {
   const suffix = queryString ? `?${queryString}` : "";

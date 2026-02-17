@@ -14,11 +14,13 @@ import FreelancerModule from "./pages/FreelancerModule";
 import FreelancerProfile from "./pages/FreelancerProfile";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import GitPulse from "./pages/GitPulse";
+import ChatWidget from "./components/ChatWidget";
 import "./App.css";
 
 function App() {
   return (
     <Router>
+      <ChatWidget />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

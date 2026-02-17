@@ -8,7 +8,7 @@ import {
   getLeetCodeProfile,
 } from "../data/api";
 import ParticlesBackground from "../components/ParticlesBackground";
-import GoogleTranslate from "../components/GoogleTranslate";
+import Navbar from "../components/Navbar";
 
 const InfoField = ({
   label,
@@ -316,12 +316,6 @@ const Profile = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
-
   const handleParsedSave = (profile) => {
     setParsedProfile(profile);
     hydrateEditable(profile);
@@ -393,71 +387,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50">
-      {/* Modern Navigation */}
-      <nav className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-rose-600 rounded-xl flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                Vectora
-              </h1>
-            </div>
-            <div className="flex items-center gap-6">
-              <GoogleTranslate />
-              {user && (
-                <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
-                  <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {user.name?.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-gray-700 font-medium text-sm">
-                    {user.name}
-                  </span>
-                </div>
-              )}
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="text-gray-700 hover:text-red-600 font-medium transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                <span className="hidden sm:inline">Dashboard</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-blue-400 via-violet-400 to-pink-700 relative overflow-hidden">
@@ -509,10 +439,7 @@ const Profile = () => {
                   </span>
                 </div>
               </div>
-              <ResumeParserCard
-                onSave={handleParsedSave}
-                onParsed={handleParsedSave}
-              />
+              <ResumeParserCard onParsed={handleParsedSave} />
             </div>
           </div>
         </section>

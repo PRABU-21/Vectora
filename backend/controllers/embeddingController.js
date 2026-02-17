@@ -39,6 +39,35 @@ async function loadEmbedModel() {
   return embedModel;
 }
 
+// Create and persist a single embedding from arbitrary text
+export async function createEmbeddingFromText({
+  userId,
+  content,
+  field = "profile",
+  originalFile = "parsed-profile.json",
+}) {
+  if (!userId) throw new Error("userId is required for embedding");
+  if (!content) throw new Error("content is required for embedding");
+
+  const model = await loadEmbedModel();
+  const embeddingResult = await model(content, {
+    pooling: "mean",
+    normalize: true,
+  });
+  const embedding = Array.from(embeddingResult.data);
+
+  const embeddingDoc = new Embedding({
+    userId,
+    originalFile,
+    field,
+    content,
+    embedding,
+  });
+
+  await embeddingDoc.save();
+  return embeddingDoc;
+}
+
 // ----------------- Helper: Clean AI JSON -----------------
 function cleanJsonString(str) {
   str = str.trim();

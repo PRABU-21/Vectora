@@ -4,6 +4,7 @@ import pdfParse from "pdf-parse";
 import { fromPath as pdfToPic } from "pdf2pic";
 import mammoth from "mammoth";
 import Groq from "groq-sdk";
+import { createEmbeddingFromText } from "./embeddingController.js";
 import User from "../models/User.js";
 
 const groqClient = process.env.GROQ_API_KEY
@@ -229,6 +230,19 @@ export const saveParsedProfile = async (req, res) => {
 
     user.parsedProfile = profile;
     await user.save();
+
+    // Auto-create an embedding from the saved profile so users don’t need to upload raw text
+    try {
+      const content = JSON.stringify(profile);
+      await createEmbeddingFromText({
+        userId: user._id,
+        content,
+        field: "resume",
+        originalFile: "parsed-profile.json",
+      });
+    } catch (embedErr) {
+      console.error("profile embedding failed", embedErr.message);
+    }
 
     return res.status(200).json({ success: true, profile: user.parsedProfile });
   } catch (error) {

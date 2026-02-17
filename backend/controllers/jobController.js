@@ -2,11 +2,13 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { pipeline } from "@xenova/transformers";
 import Job from "../models/Job.js";
 import Embedding from "../models/Embedding.js";
 import AppliedJob from "../models/AppliedJob.js";
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 
+const ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs";
 const JOB_API_URL = "https://www.arbeitnow.com/api/job-board-api";
 const LEETCODE_GRAPHQL = "https://leetcode.com/graphql/";
 const LEETCODE_STATS_URL = "https://leetcode-stats-api.herokuapp.com/";
@@ -16,11 +18,185 @@ const __dirname = path.dirname(__filename);
 const dataDir = path.join(__dirname, "../data");
 const jobsJsonPath = path.join(dataDir, "externalJobs.json");
 
+// Embedding model instance (lazy load)
+let embedModel = null;
+
+async function loadEmbedModel() {
+  if (!embedModel) {
+    console.log("🔄 Loading embedding model...");
+    embedModel = await pipeline(
+      "feature-extraction",
+      "Xenova/all-MiniLM-L6-v2"
+    );
+    console.log("✅ Embedding model loaded successfully");
+  }
+  return embedModel;
+}
+
 const ensureDataDir = () => {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 };
+
+// Fetch jobs from Adzuna with automatic embedding generation
+export const fetchAndEmbedAdzunaJobs = async (req, res) => {
+  try {
+    const appId = process.env.ADZUNA_APP_ID;
+    const appKey = process.env.ADZUNA_APP_KEY;
+
+    if (!appId || !appKey) {
+      return res.status(500).json({
+        success: false,
+        message: "Adzuna API credentials not configured",
+      });
+    }
+
+    console.log("🔍 Fetching jobs from Adzuna API...");
+
+    // Fetch from Adzuna - example: UK jobs for software engineers
+    const adzunaUrl = `${ADZUNA_API_URL}/gb/search/1?app_id=${appId}&app_key=${appKey}&results_per_page=30&what=software+engineer`;
+
+    const response = await axios.get(adzunaUrl, {
+      headers: { "content-type": "application/json" },
+    });
+
+    const adzunaResults = response.data?.results || [];
+
+    if (adzunaResults.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No jobs found from Adzuna API",
+      });
+    }
+
+    console.log(`✅ Found ${adzunaResults.length} jobs from Adzuna`);
+
+    // Load embedding model
+    const model = await loadEmbedModel();
+
+    // Transform and embed jobs
+    console.log("🔄 Generating embeddings for Adzuna jobs...");
+    const jobsWithEmbeddings = [];
+
+    for (const job of adzunaResults) {
+      try {
+        const jobDescription = job.description || "";
+
+        if (jobDescription.trim() === "") {
+          console.warn(`⚠️ Skipping job with empty description: ${job.title}`);
+          continue;
+        }
+
+        // Generate embedding from job description
+        const embeddingResult = await model(jobDescription, {
+          pooling: "mean",
+          normalize: true,
+        });
+        const embedding = Array.from(embeddingResult.data);
+
+        // Transform Adzuna job format to match our Job model
+        const jobWithEmbedding = {
+          companyName: job.company?.display_name || "Unknown Company",
+          jobRoleName: job.title || "Untitled Position",
+          description: jobDescription,
+          location: job.location?.display_name || "Remote",
+          type: job.contract_type || "Full-time",
+          experience: "Not specified",
+          salary: job.salary_is_predicted
+            ? `~${job.salary_min} - ${job.salary_max}`
+            : "Not specified",
+          skills: extractSkillsFromDescription(jobDescription),
+          explanation: `Job at ${job.company?.display_name || "company"}`,
+          embedding: embedding,
+        };
+
+        jobsWithEmbeddings.push(jobWithEmbedding);
+
+        console.log(
+          `✅ Embedded: ${jobWithEmbedding.jobRoleName} at ${jobWithEmbedding.companyName}`
+        );
+      } catch (jobErr) {
+        console.error(`Error processing job ${job.title}:`, jobErr.message);
+        continue;
+      }
+    }
+
+    if (jobsWithEmbeddings.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to process any jobs from Adzuna",
+      });
+    }
+
+    // Clear existing jobs and insert new ones
+    console.log("💾 Saving jobs to database...");
+    await Job.deleteMany({});
+    await Job.insertMany(jobsWithEmbeddings);
+
+    console.log(`✅ Successfully stored ${jobsWithEmbeddings.length} jobs with embeddings`);
+
+    res.json({
+      success: true,
+      message: "Jobs fetched and embedded from Adzuna",
+      totalJobs: jobsWithEmbeddings.length,
+      source: "adzuna",
+    });
+  } catch (error) {
+    console.error("❌ Adzuna fetch/embed error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching jobs from Adzuna",
+      error: error.message,
+    });
+  }
+};
+
+// Helper: Extract skills from job description
+function extractSkillsFromDescription(description) {
+  const commonSkills = [
+    "JavaScript",
+    "TypeScript",
+    "Python",
+    "Java",
+    "C++",
+    "C#",
+    "React",
+    "Vue",
+    "Angular",
+    "Node.js",
+    "Express",
+    "Django",
+    "Flask",
+    "MongoDB",
+    "PostgreSQL",
+    "MySQL",
+    "AWS",
+    "Azure",
+    "GCP",
+    "Docker",
+    "Kubernetes",
+    "Git",
+    "REST API",
+    "GraphQL",
+    "HTML",
+    "CSS",
+    "SASS",
+    "Webpack",
+  ];
+
+  const foundSkills = [];
+  const lowerDesc = description.toLowerCase();
+
+  for (const skill of commonSkills) {
+    if (lowerDesc.includes(skill.toLowerCase())) {
+      foundSkills.push(skill);
+    }
+  }
+
+  return foundSkills.length > 0 ? foundSkills : ["General Programming"];
+}
+
 
 // Fetch jobs from Arbeitnow and persist to JSON for downstream recommendations/seeding
 export const fetchExternalJobs = async (req, res) => {

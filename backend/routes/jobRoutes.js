@@ -7,10 +7,14 @@ import {
   fetchExternalJobs,
   getExternalJobs,
   getLeetCodeProfile,
+  fetchAndEmbedAdzunaJobs,
 } from "../controllers/jobController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Fetch jobs from Adzuna and auto-generate embeddings
+router.get("/fetch-adzuna", fetchAndEmbedAdzunaJobs);
 
 // Pull fresh jobs from external API and cache to JSON
 router.get("/fetch-external", fetchExternalJobs);
