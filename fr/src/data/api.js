@@ -23,7 +23,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth API calls
@@ -48,7 +48,7 @@ export const uploadEmbedding = async (fileData) => {
         "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${token}`,
       },
-    }
+    },
   );
   return response.data;
 };
@@ -79,7 +79,9 @@ export const getAppliedJobs = async () => {
 
 // LeetCode profile stats
 export const getLeetCodeProfile = async (username) => {
-  const response = await api.get(`/jobs/leetcode/${encodeURIComponent(username)}`);
+  const response = await api.get(
+    `/jobs/leetcode/${encodeURIComponent(username)}`,
+  );
   return response.data;
 };
 
@@ -161,8 +163,22 @@ export const updateProposalStatus = async (proposalId, payload) => {
 };
 
 export const submitProposalWork = async (proposalId, payload) => {
-  const response = await api.put(`/proposals/${proposalId}/submit-work`, payload);
+  const response = await api.put(
+    `/proposals/${proposalId}/submit-work`,
+    payload,
+  );
   return response.data?.data || response.data;
+};
+
+// Payments API calls
+export const createPaymentOrder = async (proposalId, amount) => {
+  const response = await api.post(`/payments/order`, { proposalId, amount });
+  return response.data;
+};
+
+export const verifyPayment = async (payload) => {
+  const response = await api.post(`/payments/verify`, payload);
+  return response.data;
 };
 
 // Freelancer profile API calls
