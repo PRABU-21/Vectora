@@ -8,6 +8,7 @@ import {
   getLeetCodeProfile,
 } from "../data/api";
 import ParticlesBackground from "../components/ParticlesBackground";
+import GoogleTranslate from "../components/GoogleTranslate";
 
 const InfoField = ({
   label,
@@ -263,8 +264,8 @@ const Profile = () => {
       setLeetcodeData(null);
       setLeetcodeError(
         err?.response?.data?.message ||
-          err?.message ||
-          "Failed to fetch LeetCode data",
+        err?.message ||
+        "Failed to fetch LeetCode data",
       );
     } finally {
       setLeetcodeLoading(false);
@@ -417,6 +418,7 @@ const Profile = () => {
               </h1>
             </div>
             <div className="flex items-center gap-6">
+              <GoogleTranslate />
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
                   <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
