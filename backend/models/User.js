@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    required: [true, "Please provide a phone number"],
+    required: false,
     trim: true,
   },
   location: {

@@ -7,6 +7,22 @@ import {
   updateProposalStatus,
   verifyPayment,
 } from "../data/api";
+import {
+  Clock,
+  Calendar,
+  DollarSign,
+  MapPin,
+  User,
+  ArrowLeft,
+  AlertCircle,
+  CheckCircle,
+  Send,
+  Github,
+  Globe,
+  Briefcase,
+  ShieldCheck,
+  CreditCard
+} from "lucide-react";
 
 const ProjectDetail = ({ project, onBack, onApply, userProposals = [] }) => {
   const [timeLeft, setTimeLeft] = useState({
@@ -64,6 +80,7 @@ const ProjectDetail = ({ project, onBack, onApply, userProposals = [] }) => {
     projectOwnerId &&
     String(projectOwnerId) === String(currentUserId),
   );
+
   const myProposalFromProps = useMemo(() => {
     if (!userProposals || !project) return null;
     return (
@@ -149,7 +166,6 @@ const ProjectDetail = ({ project, onBack, onApply, userProposals = [] }) => {
   const handleProposalStatus = async (proposalId, status) => {
     setProposalError(null);
     try {
-      // Send status as an object so backend JSON parser receives a valid payload
       const updated = await updateProposalStatus(proposalId, { status });
       setIncomingProposals((prev) =>
         prev.map((p) =>
@@ -199,11 +215,11 @@ const ProjectDetail = ({ project, onBack, onApply, userProposals = [] }) => {
               prev.map((p) =>
                 p._id === proposal._id
                   ? {
-                      ...p,
-                      ...updatedProposal,
-                      status:
-                        updatedProposal.status || SUBMISSION_STATUSES.COMPLETED,
-                    }
+                    ...p,
+                    ...updatedProposal,
+                    status:
+                      updatedProposal.status || SUBMISSION_STATUSES.COMPLETED,
+                  }
                   : p,
               ),
             );
@@ -312,657 +328,310 @@ const ProjectDetail = ({ project, onBack, onApply, userProposals = [] }) => {
   };
 
   const isUrgent = timeLeft.days <= 3 && !isExpired;
-  const canSubmitWork = [
-    SUBMISSION_STATUSES.ACCEPTED,
-    SUBMISSION_STATUSES.IN_PROGRESS,
-    SUBMISSION_STATUSES.NEEDS_UPDATES,
-  ].includes(myProposal?.status);
+
+  // New Components for Redesign
+  const TimerBox = ({ value, label }) => (
+    <div className="flex flex-col items-center bg-white/10 backdrop-blur-md rounded-xl p-3 min-w-[70px] border border-white/20">
+      <span className="text-2xl font-bold text-white tabular-nums">{String(value).padStart(2, '0')}</span>
+      <span className="text-xs text-red-100 uppercase tracking-widest">{label}</span>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <button
-          onClick={onBack}
-          className="mb-6 flex items-center text-red-600 hover:text-red-800 font-medium"
-        >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-br from-red-600 to-rose-700 pb-24 pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+        <div className="relative max-w-6xl mx-auto">
+          <button
+            onClick={onBack}
+            className="group flex items-center text-red-100 hover:text-white font-medium mb-8 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            ></path>
-          </svg>
-          Back to Projects
-        </button>
+            <div className="bg-white/10 p-2 rounded-full mr-3 group-hover:bg-white/20 transition-all">
+              <ArrowLeft className="w-5 h-5" />
+            </div>
+            Back to Projects
+          </button>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div
-            className={`p-6 border-b ${isUrgent ? "bg-red-50 border-red-200" : "bg-white border-gray-200"}`}
-          >
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {project.title}
-                  </h1>
-                  <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full border ${getStatusColor(project.status)}`}
-                  >
-                    {project.status}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className={`px-4 py-1.5 text-sm font-bold rounded-full border shadow-sm ${project.status === 'Open' ? 'bg-green-400/20 text-white border-green-400/30' :
+                  'bg-white/20 text-white border-white/30'
+                  }`}>
+                  {project.status || 'Active'}
+                </span>
+                {isUrgent && (
+                  <span className="px-4 py-1.5 text-sm font-bold rounded-full bg-red-500 text-white shadow-lg animate-pulse">
+                    URGENT
                   </span>
-                  {isUrgent && (
-                    <span className="px-3 py-1 text-sm font-medium rounded-full bg-red-100 text-red-800">
-                      URGENT
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  className={`text-sm ${isUrgent ? "text-red-600" : "text-gray-600"} mb-4`}
-                >
-                  <span className="font-medium">Deadline:</span>{" "}
-                  {project.deadline
-                    ? new Date(project.deadline).toLocaleDateString()
-                    : "N/A"}
-                  {!isExpired && project.deadline && (
-                    <span className="ml-2">
-                      Time left: {timeLeft.days}d {timeLeft.hours}h{" "}
-                      {timeLeft.minutes}m {timeLeft.seconds}s
-                    </span>
-                  )}
-                  {isExpired && (
-                    <span className="ml-2 text-red-600 font-medium">
-                      EXPIRED
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
-
-              <div className="flex flex-col items-end gap-2">
-                <div className="text-sm text-gray-500">
-                  Posted:{" "}
-                  {project.postedDate
-                    ? new Date(project.postedDate).toLocaleDateString()
-                    : "N/A"}
+              <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4 shadow-sm">
+                {project.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-6 text-red-100">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>Posted {project.postedDate ? new Date(project.postedDate).toLocaleDateString() : "Recently"}</span>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {isOwner ? "Owner view" : "Freelancer view"}
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  <span>{isOwner ? "You (Owner)" : project.postedBy?.name || "Client"}</span>
                 </div>
               </div>
             </div>
+
+            {/* Timer */}
+            {!isExpired && project.deadline && (
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl">
+                <p className="text-red-100 text-sm font-medium mb-4 text-center">Time Remaining</p>
+                <div className="flex gap-2">
+                  <TimerBox value={timeLeft.days} label="Days" />
+                  <span className="text-2xl text-white/50 pt-2">:</span>
+                  <TimerBox value={timeLeft.hours} label="Hrs" />
+                  <span className="text-2xl text-white/50 pt-2">:</span>
+                  <TimerBox value={timeLeft.minutes} label="Mins" />
+                  <span className="text-2xl text-white/50 pt-2">:</span>
+                  <TimerBox value={timeLeft.seconds} label="Secs" />
+                </div>
+              </div>
+            )}
           </div>
+        </div>
+      </div>
 
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Project Description
+      {/* Main Content Content */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+          {/* Left Column: Details & Scripts */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Description Card */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <Briefcase className="w-6 h-6 text-red-500" />
+                Project Details
+              </h2>
+              <div className="prose prose-red max-w-none text-gray-600 leading-relaxed">
+                {project.description}
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Required Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {(project.skills || []).map((skill, index) => (
+                    <span key={index} className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-red-50 text-red-700 border border-red-100 hover:bg-red-100 transition-colors cursor-default">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Proposals Section (Owner Only) */}
+            {isOwner && (
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <User className="w-6 h-6 text-red-500" />
+                    Incoming Proposals
                   </h2>
-                  <p className="text-gray-700 leading-relaxed">
-                    {project.description}
-                  </p>
+                  <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
+                    {incomingProposals.length} Applicants
+                  </span>
                 </div>
 
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Required Skills
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {(project.skills || []).map((skill, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+                {loadingProposals ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
                   </div>
-                </div>
+                ) : incomingProposals.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <User className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No proposals yet. Check back later!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {incomingProposals.map((p) => (
+                      <div key={p._id} className="group bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg hover:border-red-200 transition-all duration-300">
+                        <div className="flex flex-col md:flex-row justify-between gap-6">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-bold text-lg text-gray-900">{p.freelancerId?.name || "Freelancer"}</h3>
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusColor(p.status)}`}>
+                                {p.status === SUBMISSION_STATUSES.COMPLETED ? "PAID & COMPLETED" : p.status}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-4 line-clamp-2">{p.description}</p>
 
-                {isOwner ? (
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-gray-900">
-                        Incoming Proposals
-                      </h3>
-                      <div className="text-xs text-gray-500">
-                        {incomingProposals.length} total
-                      </div>
-                    </div>
-                    {loadingProposals ? (
-                      <div className="text-sm text-gray-600">
-                        Loading proposals...
-                      </div>
-                    ) : proposalError ? (
-                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                        {proposalError}
-                      </div>
-                    ) : incomingProposals.length === 0 ? (
-                      <div className="text-sm text-gray-600">
-                        No proposals yet.
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {incomingProposals.map((p) => (
-                          <div
-                            key={p._id}
-                            className="border border-gray-200 rounded-lg p-3"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="font-semibold text-gray-900">
-                                    {p.freelancerId?.name || "Freelancer"}
-                                  </span>
-                                  <span
-                                    className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(p.status)}`}
-                                  >
-                                    {p.status}
-                                  </span>
-                                </div>
-                                <div className="text-sm text-gray-700 mb-2">
-                                  {p.description}
-                                </div>
-                                <div className="text-xs text-gray-600 space-x-3 flex flex-wrap gap-2">
-                                  <span>Cost: ${p.expectedCost}</span>
-                                  <span>
-                                    Delivery: {p.expectedDelivery} days
-                                  </span>
-                                  <span>
-                                    Submitted:{" "}
-                                    {new Date(
-                                      p.submittedAt,
-                                    ).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                {p.deliveryUrl && (
-                                  <div className="mt-2 text-xs">
-                                    <span className="font-semibold">
-                                      Deployment:{" "}
-                                    </span>
-                                    <a
-                                      className="text-indigo-600 break-all"
-                                      href={p.deliveryUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      {p.deliveryUrl}
-                                    </a>
-                                  </div>
-                                )}
-                                {p.deliveryNote && (
-                                  <div className="mt-1 text-xs text-gray-700">
-                                    <span className="font-semibold">
-                                      GitHub:{" "}
-                                    </span>
-                                    <a
-                                      className="text-indigo-600 break-all"
-                                      href={p.deliveryNote}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      {p.deliveryNote}
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex flex-col items-end gap-2 text-xs">
-                                {p.status === SUBMISSION_STATUSES.ACCEPTED && (
-                                  <>
-                                    <button
-                                      onClick={() =>
-                                        handleProposalStatus(
-                                          p._id,
-                                          SUBMISSION_STATUSES.NEEDS_UPDATES,
-                                        )
-                                      }
-                                      className="px-3 py-1 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100"
-                                    >
-                                      Needs Updates
-                                    </button>
-                                    <button
-                                      onClick={() => handlePayAndComplete(p)}
-                                      disabled={paymentLoadingId === p._id}
-                                      className="px-3 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 disabled:opacity-60"
-                                    >
-                                      {paymentLoadingId === p._id
-                                        ? "Processing..."
-                                        : "Pay & Complete"}
-                                    </button>
-                                  </>
-                                )}
-
-                                {p.status ===
-                                  SUBMISSION_STATUSES.NEEDS_UPDATES && (
-                                  <button
-                                    onClick={() => handlePayAndComplete(p)}
-                                    disabled={paymentLoadingId === p._id}
-                                    className="px-3 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 disabled:opacity-60"
-                                  >
-                                    {paymentLoadingId === p._id
-                                      ? "Processing..."
-                                      : "Pay & Complete"}
-                                  </button>
-                                )}
-
-                                {p.status !== SUBMISSION_STATUSES.ACCEPTED &&
-                                  p.status !==
-                                    SUBMISSION_STATUSES.NEEDS_UPDATES &&
-                                  p.status !== SUBMISSION_STATUSES.COMPLETED &&
-                                  p.status !== SUBMISSION_STATUSES.REJECTED && (
-                                    <>
-                                      <button
-                                        onClick={() =>
-                                          handleProposalStatus(
-                                            p._id,
-                                            SUBMISSION_STATUSES.ACCEPTED,
-                                          )
-                                        }
-                                        className="px-3 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
-                                      >
-                                        Accept / In Progress
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleProposalStatus(
-                                            p._id,
-                                            SUBMISSION_STATUSES.NEEDS_UPDATES,
-                                          )
-                                        }
-                                        className="px-3 py-1 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100"
-                                      >
-                                        Needs Updates
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleProposalStatus(
-                                            p._id,
-                                            SUBMISSION_STATUSES.REJECTED,
-                                          )
-                                        }
-                                        className="px-3 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
-                                      >
-                                        Reject
-                                      </button>
-                                    </>
-                                  )}
-
-                                {p.status ===
-                                  SUBMISSION_STATUSES.SUBMITTED_WORK && (
-                                  <button
-                                    onClick={() => handlePayAndComplete(p)}
-                                    disabled={paymentLoadingId === p._id}
-                                    className="px-3 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 disabled:opacity-60"
-                                  >
-                                    {paymentLoadingId === p._id
-                                      ? "Processing..."
-                                      : "Pay & Complete"}
-                                  </button>
-                                )}
-                              </div>
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                              <div className="flex items-center gap-1.5"><DollarSign className="w-4 h-4" />{p.expectedCost}</div>
+                              <div className="flex items-center gap-1.5"><Clock className="w-4 h-4" />{p.expectedDelivery} days</div>
                             </div>
                           </div>
-                        ))}
+
+                          <div className="flex flex-col gap-2 justify-center min-w-[140px]">
+                            {p.status === SUBMISSION_STATUSES.ACCEPTED && (
+                              <button onClick={() => handleProposalStatus(p._id, SUBMISSION_STATUSES.NEEDS_UPDATES)} className="btn-secondary text-xs py-2 w-full bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-lg font-medium">Request Updates</button>
+                            )}
+                            {/* Simple approve/reject actions */}
+                            {!['Accepted', 'Needs Updates', 'Completed', 'Rejected', 'Submitted Work'].includes(p.status) && (
+                              <>
+                                <button onClick={() => handleProposalStatus(p._id, SUBMISSION_STATUSES.ACCEPTED)} className="w-full py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 shadow-sm">Accept Proposal</button>
+                                <button onClick={() => handleProposalStatus(p._id, SUBMISSION_STATUSES.REJECTED)} className="w-full py-2 bg-white text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-50">Reject</button>
+                              </>
+                            )}
+
+                            {p.status === SUBMISSION_STATUSES.SUBMITTED_WORK && (
+                              <button onClick={() => handlePayAndComplete(p)} disabled={paymentLoadingId === p._id} className="btn-primary text-xs py-2 w-full bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-medium shadow-md shadow-indigo-200 mt-2">
+                                {paymentLoadingId === p._id ? "Processing..." : "Pay & Complete"}
+                              </button>
+                            )}
+                            {/* Show submitted work details */}
+                            {p.deliveryUrl && (
+                              <div className="mt-2 pt-2 border-t border-gray-100 w-full">
+                                <a href={p.deliveryUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-xs text-indigo-600 hover:underline mb-1"><Globe className="w-3 h-3" /> View Deployment</a>
+                                <a href={p.deliveryNote} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-xs text-gray-600 hover:underline"><Github className="w-3 h-3" /> View Code</a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    {paymentError && (
-                      <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                        {paymentError}
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Sidebar */}
+          <div className="space-y-8">
+            {/* Budget & Timeline Card */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 text-green-600 rounded-xl"><DollarSign className="w-6 h-6" /></div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Budget</p>
+                      <p className="text-lg font-bold text-gray-900">${project.minBudget} - ${project.maxBudget}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><Clock className="w-6 h-6" /></div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Duration</p>
+                      <p className="text-lg font-bold text-gray-900">{project.duration} Weeks</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Application / Status Card (Freelancer Only) */}
+            {!isOwner && (
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10"><Send className="w-24 h-24 text-red-500 transform rotate-12" /></div>
+
+                <h2 className="text-xl font-bold text-gray-900 mb-6 relative z-10">
+                  {myProposal ? "Your Application" : "Apply Now"}
+                </h2>
+
+                {myProposal ? (
+                  <div className="relative z-10 space-y-6">
+                    <div className={`p-4 rounded-xl border-l-4 ${myProposal.status === 'Accepted' ? 'bg-green-50 border-green-500 text-green-700' :
+                      myProposal.status === 'Rejected' ? 'bg-red-50 border-red-500 text-red-700' :
+                        'bg-blue-50 border-blue-500 text-blue-700'
+                      }`}>
+                      <p className="font-semibold text-sm">Status: {myProposal.status === SUBMISSION_STATUSES.COMPLETED ? "PAID & COMPLETED" : myProposal.status}</p>
+                      <p className="text-xs mt-1 opacity-80">Submitted on {new Date(myProposal.submittedAt).toLocaleDateString()}</p>
+                    </div>
+
+                    {/* Work Submission Form */}
+                    {(['Accepted', 'Needs Updates', 'Submitted Work'].includes(myProposal.status)) && (
+                      <div className="pt-4 border-t border-gray-100">
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-600" /> Submit Work</h3>
+
+                        {myProposal.status === 'Needs Updates' && !acknowledgedUpdates && (
+                          <div className="bg-yellow-50 p-3 rounded-lg text-sm text-yellow-800 mb-4 flex flex-col gap-2">
+                            <p>Client requested changes. Please review.</p>
+                            <button onClick={() => setAcknowledgedUpdates(true)} className="text-xs font-bold underline text-left">Acknowledge & Submit Update</button>
+                          </div>
+                        )}
+
+                        {(!['Needs Updates'].includes(myProposal.status) || acknowledgedUpdates) && (
+                          <form onSubmit={handleSolutionSubmit} className="space-y-4">
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Live URL</label>
+                              <div className="relative">
+                                <Globe className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                <input type="url" value={solutionForm.deliveryUrl} onChange={e => setSolutionForm({ ...solutionForm, deliveryUrl: e.target.value })} className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="https://myapp.com" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">GitHub URL</label>
+                              <div className="relative">
+                                <Github className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                <input type="url" value={solutionForm.githubUrl} onChange={e => setSolutionForm({ ...solutionForm, githubUrl: e.target.value })} className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="https://github.com/..." />
+                              </div>
+                            </div>
+                            <button type="submit" disabled={solutionSubmitting} className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-black transition-colors shadow-lg">
+                              {solutionSubmitting ? "Submitting..." : "Submit Deliverables"}
+                            </button>
+                          </form>
+                        )}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    {!myProposal ? (
-                      <>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="font-semibold text-gray-900">
-                            Apply to this project
-                          </h3>
-                          <div className="text-xs text-gray-500">
-                            Status: {project.status}
-                          </div>
-                        </div>
+                  <form onSubmit={handleApplySubmit} className="relative z-10 space-y-4">
+                    {applyError && <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg">{applyError}</div>}
 
-                        {applyError && (
-                          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-3">
-                            {applyError}
-                          </div>
-                        )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">My Bid ($)</label>
+                        <input type="number" value={applyForm.expectedCost} onChange={e => setApplyForm({ ...applyForm, expectedCost: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="1000" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Days</label>
+                        <input type="number" value={applyForm.expectedDelivery} onChange={e => setApplyForm({ ...applyForm, expectedDelivery: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="7" />
+                      </div>
+                    </div>
 
-                        <form
-                          className="space-y-3"
-                          onSubmit={handleApplySubmit}
-                        >
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                                Expected Cost (USD)
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={applyForm.expectedCost}
-                                onChange={(e) =>
-                                  setApplyForm((prev) => ({
-                                    ...prev,
-                                    expectedCost: e.target.value,
-                                  }))
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                placeholder="e.g. 1200"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                                Delivery (days)
-                              </label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={applyForm.expectedDelivery}
-                                onChange={(e) =>
-                                  setApplyForm((prev) => ({
-                                    ...prev,
-                                    expectedDelivery: e.target.value,
-                                  }))
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                placeholder="e.g. 7"
-                              />
-                            </div>
-                          </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Proposal</label>
+                      <textarea rows="3" value={applyForm.description} onChange={e => setApplyForm({ ...applyForm, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none resize-none" placeholder="I am the best fit..." />
+                    </div>
 
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
-                              Proposal Summary
-                            </label>
-                            <textarea
-                              value={applyForm.description}
-                              onChange={(e) =>
-                                setApplyForm((prev) => ({
-                                  ...prev,
-                                  description: e.target.value,
-                                }))
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                              rows={4}
-                              placeholder="Briefly explain your approach and experience."
-                            />
-                          </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Portfolio (Optional)</label>
+                      <input type="url" value={applyForm.portfolioLink} onChange={e => setApplyForm({ ...applyForm, portfolioLink: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="https://" />
+                    </div>
 
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
-                              Portfolio / Work Link (optional)
-                            </label>
-                            <input
-                              type="url"
-                              value={applyForm.portfolioLink}
-                              onChange={(e) =>
-                                setApplyForm((prev) => ({
-                                  ...prev,
-                                  portfolioLink: e.target.value,
-                                }))
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                              placeholder="https://"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>
-                              {project.applicants ?? 0} proposals submitted
-                            </span>
-                            <span>
-                              Posted:{" "}
-                              {project.postedDate
-                                ? new Date(
-                                    project.postedDate,
-                                  ).toLocaleDateString()
-                                : "N/A"}
-                            </span>
-                          </div>
-
-                          <button
-                            type="submit"
-                            disabled={applySubmitting}
-                            className="w-full px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold rounded-lg hover:from-red-700 hover:to-rose-700 disabled:opacity-60"
-                          >
-                            {applySubmitting
-                              ? "Submitting..."
-                              : "Submit Proposal"}
-                          </button>
-                        </form>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="font-semibold text-gray-900">
-                            Deliver your work
-                          </h3>
-                          <div className="text-xs text-gray-500">
-                            Status: {myProposal.status}
-                          </div>
-                        </div>
-
-                        {myProposal.status ===
-                          SUBMISSION_STATUSES.SUBMITTED_WORK && (
-                          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm mb-3">
-                            Work submitted. Awaiting client review.
-                            {myProposal.deliverySubmittedAt && (
-                              <span className="ml-2 text-green-900">
-                                Last submitted:{" "}
-                                {new Date(
-                                  myProposal.deliverySubmittedAt,
-                                ).toLocaleDateString()}
-                              </span>
-                            )}
-                            <div className="mt-2 space-y-1 text-gray-800">
-                              {myProposal.deliveryUrl && (
-                                <div className="text-xs">
-                                  <span className="font-semibold">
-                                    Deployment:{" "}
-                                  </span>
-                                  <a
-                                    className="text-indigo-600 break-all"
-                                    href={myProposal.deliveryUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    {myProposal.deliveryUrl}
-                                  </a>
-                                </div>
-                              )}
-                              {myProposal.deliveryNote && (
-                                <div className="text-xs">
-                                  <span className="font-semibold">
-                                    GitHub:{" "}
-                                  </span>
-                                  <a
-                                    className="text-indigo-600 break-all"
-                                    href={myProposal.deliveryNote}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    {myProposal.deliveryNote}
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {!canSubmitWork &&
-                          myProposal.status !==
-                            SUBMISSION_STATUSES.SUBMITTED_WORK && (
-                            <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-lg text-sm mb-3">
-                              Your proposal is currently "{myProposal.status}".
-                              You can submit work after the client accepts or
-                              requests updates.
-                            </div>
-                          )}
-
-                        {myProposal.status ===
-                          SUBMISSION_STATUSES.NEEDS_UPDATES && (
-                          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm mb-3">
-                            Owner requested updates. Please review feedback and
-                            resubmit.
-                            {!acknowledgedUpdates && (
-                              <button
-                                type="button"
-                                onClick={() => setAcknowledgedUpdates(true)}
-                                className="ml-3 px-3 py-1 text-xs rounded bg-white text-yellow-800 border border-yellow-300 hover:bg-yellow-100"
-                              >
-                                I saw the updates
-                              </button>
-                            )}
-                          </div>
-                        )}
-
-                        {solutionError && (
-                          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-3">
-                            {solutionError}
-                          </div>
-                        )}
-
-                        {canSubmitWork && (
-                          <form
-                            className="space-y-3"
-                            onSubmit={handleSolutionSubmit}
-                            aria-disabled={!canSubmitWork}
-                          >
-                            <div>
-                              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                                Deployment URL
-                              </label>
-                              <input
-                                type="url"
-                                value={solutionForm.deliveryUrl}
-                                onChange={(e) =>
-                                  setSolutionForm((prev) => ({
-                                    ...prev,
-                                    deliveryUrl: e.target.value,
-                                  }))
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                placeholder="https://your-live-app.com"
-                                required
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                                GitHub URL
-                              </label>
-                              <input
-                                type="url"
-                                value={solutionForm.githubUrl}
-                                onChange={(e) =>
-                                  setSolutionForm((prev) => ({
-                                    ...prev,
-                                    githubUrl: e.target.value,
-                                  }))
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                placeholder="https://github.com/your-repo"
-                                required
-                              />
-                            </div>
-
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>Last status: {myProposal.status}</span>
-                              {myProposal.deliverySubmittedAt && (
-                                <span>
-                                  Last submitted:{" "}
-                                  {new Date(
-                                    myProposal.deliverySubmittedAt,
-                                  ).toLocaleDateString()}
-                                </span>
-                              )}
-                            </div>
-
-                            <button
-                              type="submit"
-                              disabled={
-                                solutionSubmitting ||
-                                (myProposal.status ===
-                                  SUBMISSION_STATUSES.NEEDS_UPDATES &&
-                                  !acknowledgedUpdates) ||
-                                !canSubmitWork
-                              }
-                              className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60"
-                            >
-                              {solutionSubmitting
-                                ? "Submitting..."
-                                : "Submit Work"}
-                            </button>
-                          </form>
-                        )}
-                      </>
-                    )}
-                  </div>
+                    <button type="submit" disabled={applySubmitting} className="w-full bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 rounded-xl font-bold text-sm hover:shadow-lg hover:scale-[1.02] transition-all">
+                      {applySubmitting ? "Sending..." : "Submit Proposal"}
+                    </button>
+                  </form>
                 )}
               </div>
+            )}
 
-              <div className="space-y-6">
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">
-                    Project Details
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Budget:</span>
-                      <span className="font-medium">
-                        ${project.minBudget} - ${project.maxBudget}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium">
-                        {project.duration} weeks
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Deadline:</span>
-                      <span className="font-medium">
-                        {project.deadline
-                          ? new Date(project.deadline).toLocaleDateString()
-                          : "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Proposals:</span>
-                      <span className="font-medium">
-                        {project.applicants ?? 0}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">
-                    Application Status
-                  </h3>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {project.applicants ?? 0}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      proposals received
-                    </div>
-                  </div>
+            <div className="bg-blue-50/50 rounded-3xl p-6 border border-blue-100/50">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-6 h-6 text-blue-600 mt-1" />
+                <div>
+                  <h4 className="font-bold text-gray-900 text-sm">Safe Payments</h4>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                    Funds are held securely until work is approved.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

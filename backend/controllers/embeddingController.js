@@ -1,16 +1,11 @@
 import multer from "multer";
 import fs from "fs";
 import path from "path";
-import axios from "axios";
 import { pipeline } from "@xenova/transformers";
 import Embedding from "../models/Embedding.js";
 import User from "../models/User.js";
-
-// Create raw responses directory if it doesn't exist
-const rawResponsesDir = path.join(process.cwd(), "raw_responses");
-if (!fs.existsSync(rawResponsesDir)) {
-  fs.mkdirSync(rawResponsesDir, { recursive: true });
-}
+import pdf from "pdf-parse";
+import Groq from "groq-sdk";
 
 // ----------------- Multer Setup -----------------
 const storage = multer.diskStorage({
@@ -68,207 +63,52 @@ export async function createEmbeddingFromText({
   return embeddingDoc;
 }
 
-// ----------------- Helper: Clean AI JSON -----------------
-function cleanJsonString(str) {
-  str = str.trim();
-
-  // Remove markdown code block wrappers
-  if (str.startsWith("```")) {
-    str = str.split("```")[1] || "";
-    str = str.replace(/^json/i, "").trim();
+// ----------------- Helper: Process text with Groq -----------------
+async function processTextWithGroq(textContent) {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) {
+    console.warn("GROQ_API_KEY not set. Returning raw text.");
+    return textContent;
   }
 
-  // Remove any trailing markdown
-  if (str.endsWith("```")) {
-    str = str.substring(0, str.lastIndexOf("```"));
-  }
+  const groq = new Groq({ apiKey: GROQ_API_KEY });
 
-  // Replace newlines inside strings with spaces
-  str = str.replace(/\r?\n/g, " ");
-
-  // Handle unescaped quotes inside strings by being more careful
   try {
-    // First try to parse as-is
-    JSON.parse(str);
-    return str;
-  } catch (e) {
-    // If that fails, try to fix common issues
-    // Replace unescaped quotes that are likely inside strings
-    str = str.replace(/("[^"\\]*)(?:"|\\")([^"\\]*")/g, (match, p1, p2) => {
-      return p1 + '\\"' + p2;
+    console.log("🔍 Sending text to Groq API for processing...");
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert at processing text for embeddings. Clean the following text, removing artifacts, extra whitespace, and ensuring it is well-formatted for job matching analysis. Return ONLY the cleaned text content, no markdown formatting or explanations."
+        },
+        {
+          role: "user",
+          content: textContent.substring(0, 30000) // Truncate to avoid context limits if excessively large
+        },
+      ],
+      model: "llama3-70b-8192", // Use a capable model
     });
 
-    // Replace other problematic characters
-    str = str.replace(/\\"/g, '"'); // Handle any double escapes
-    str = str.replace(/([^\\])"/g, '$1\\"'); // Escape unescaped quotes
+    const cleanedText = completion.choices[0]?.message?.content || textContent;
+    console.log("✅ Groq API responded successfully");
+    return cleanedText;
 
-    // Try to fix common JSON issues
-    str = str.replace(/,\s*}/g, "}"); // Remove trailing commas before }
-    str = str.replace(/,\s*]/g, "]"); // Remove trailing commas before ]
-
-    // Remove any content after the final closing brace
-    const lastBrace = str.lastIndexOf("}");
-    if (lastBrace !== -1) {
-      str = str.substring(0, lastBrace + 1);
-    }
-  }
-
-  return str.trim();
-}
-
-// ----------------- Helper: Safe JSON Parse -----------------
-function safeJsonParse(str) {
-  try {
-    // First try to parse as-is
-    return JSON.parse(str);
-  } catch (e) {
-    // If that fails, try to clean and parse
-    const cleaned = cleanJsonString(str);
-    try {
-      return JSON.parse(cleaned);
-    } catch (e2) {
-      // If still failing, try a more aggressive approach
-      // Remove problematic characters while preserving structure
-      let aggressiveClean = cleaned
-        .replace(/\r/g, "\\r") // Escape carriage returns
-        .replace(/\n/g, "\\n") // Escape newlines
-        .replace(/\t/g, "\\t"); // Escape tabs
-
-      try {
-        return JSON.parse(aggressiveClean);
-      } catch (e3) {
-        // If all else fails, return null to indicate failure
-        console.error("All JSON parsing attempts failed:", e3.message);
-        return null;
-      }
-    }
-  }
-}
-
-function extractFirstJsonObject(str) {
-  if (!str) return null;
-  const match = str.match(/\{[\s\S]*\}/);
-  if (match) {
-    const parsed = safeJsonParse(match[0]);
-    if (parsed) return parsed;
-  }
-  return null;
-}
-
-// ----------------- Helper: Flatten content -----------------
-function flatten(value) {
-  if (!value) return "";
-
-  if (Array.isArray(value)) {
-    return value
-      .map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v)))
-      .join(" ");
-  }
-
-  if (typeof value === "object") return JSON.stringify(value);
-
-  return String(value);
-}
-
-// ----------------- Helper: Parse text with Gemini -----------------
-async function parseTextWithGemini(textContent) {
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === "") {
-    console.warn("GEMINI_API_KEY not set. Using mock response.");
-    return JSON.stringify({
-      title: "Mock Title",
-      summary: "Mock Summary",
-      keywords: ["mock", "test"],
-      categories: ["test"],
-      content: textContent.substring(0, 100),
-    });
-  }
-
-  const prompt = `
-You are an expert resume parser.
-Extract meaningful information from the text below.
-Return ONLY valid JSON with:
-- No line breaks inside strings
-- Properly escaped quotes
-- No markdown
-If a field is missing, set it to null.
-
-{
-  "title": "",
-  "summary": "",
-  "keywords": [],
-  "categories": [],
-  "content": ""
-}
-
-Resume Text:
-"""
-${textContent}
-"""
-`;
-
-  try {
-    console.log("🔍 Sending text to Gemini API for parsing...");
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 1024,
-        },
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    console.log("✅ Gemini API responded successfully");
-    return response.data.candidates[0].content.parts[0].text;
   } catch (err) {
-    console.error("Gemini API error:", err.response?.data || err.message);
-    console.warn("Using mock response due to error");
-    return JSON.stringify({
-      title: "Mock Title",
-      summary: "Mock Summary",
-      keywords: ["mock", "test"],
-      categories: ["test"],
-      content: textContent.substring(0, 100),
-    });
+    console.error("Groq API error:", err.message);
+    console.warn("Using raw text due to error");
+    return textContent;
   }
 }
 
-// ----------------- Helper: Store raw Gemini response -----------------
-function storeRawResponse(textContent, rawResponse, userId, fileName) {
+// ----------------- Helper: Extract Text from PDF -----------------
+async function extractTextFromPdf(filePath) {
+  const dataBuffer = fs.readFileSync(filePath);
   try {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const userIdClean = userId.toString();
-    const fileNameClean = path.parse(fileName).name; // Get just the filename without extension
-
-    const rawResponseFileName = `${userIdClean}_${fileNameClean}_${timestamp}.txt`;
-    const rawResponsePath = path.join(rawResponsesDir, rawResponseFileName);
-
-    // Create content to save: original text + raw Gemini response
-    const contentToSave =
-      `Original Text:
-${"=".repeat(50)}
-${textContent}
-
-` + `Raw Gemini Response:\n${"=".repeat(50)}\n${rawResponse}\n`;
-
-    fs.writeFileSync(rawResponsePath, contentToSave);
-    console.log(`💾 Raw response saved to: ${rawResponsePath}`);
+    const data = await pdf(dataBuffer);
+    return data.text;
   } catch (error) {
-    console.error("Error saving raw response:", error);
+    console.error("Error parsing PDF:", error);
+    throw new Error("Failed to parse PDF file");
   }
 }
 
@@ -285,59 +125,39 @@ export const uploadEmbedding = async (req, res) => {
     console.log(`✅ File uploaded: ${req.file.originalname}`);
     console.log(`📁 File path: ${req.file.path}`);
 
-    const textContent = fs.readFileSync(req.file.path, "utf-8");
-    console.log(
-      `📄 Text content loaded, length: ${textContent.length} characters`
-    );
+    let rawTextContent = "";
 
-    // 1️⃣ Parse with Gemini
-    console.log("🔍 Parsing text with Gemini API...");
-    let parsedRaw = await parseTextWithGemini(textContent);
-    console.log("📋 Raw Gemini API Response received");
-
-    // Store the raw response in a text file
-    console.log("💾 Storing raw response in file...");
-    storeRawResponse(textContent, parsedRaw, req.userId, req.file.originalname);
-
-    // Use safe JSON parsing
-    console.log("🔄 Attempting to parse Gemini response as JSON...");
-    let parsedJSON = safeJsonParse(parsedRaw) || extractFirstJsonObject(parsedRaw);
-
-    if (parsedJSON === null) {
-      console.warn("⚠️ Gemini JSON parse failed; using minimal fallback");
-      parsedJSON = {
-        title: null,
-        summary: null,
-        keywords: [],
-        categories: [],
-        content: textContent.substring(0, 5000),
-      };
+    // Check file type
+    if (req.file.mimetype === "application/pdf" || req.file.originalname.toLowerCase().endsWith(".pdf")) {
+      console.log("📄 Detected PDF file. Extracting text...");
+      rawTextContent = await extractTextFromPdf(req.file.path);
+    } else {
+      // Fallback for text files
+      console.log("📄 Detected Text file. Reading directly...");
+      rawTextContent = fs.readFileSync(req.file.path, "utf-8");
     }
 
-    console.log("✅ JSON parsed successfully:", Object.keys(parsedJSON));
     console.log(
-      "📋 Parsed Gemini API Response:",
-      JSON.stringify(parsedJSON, null, 2)
+      `📄 Raw text extracted, length: ${rawTextContent.length} characters`
     );
+
+    // 1️⃣ Process with Groq
+    console.log("🔍 Processing text with Groq API...");
+    const processedText = await processTextWithGroq(rawTextContent);
+    console.log(`📋 Processed text length: ${processedText.length} characters`);
 
     // 2️⃣ Load embedding model
     console.log("🔄 Loading embedding model...");
     const model = await loadEmbedModel();
     console.log("✅ Embedding model loaded");
 
-    // 3️⃣ Use RAW resume text for embedding (matches Python reference exactly)
-    // Python: resume_embedding = model.encode(resume_text, normalize_embeddings=True)
+    // 3️⃣ Create embedding from PROCESSED text
     console.log(
-      "📝 Using raw resume text for embedding (Python reference approach)"
+      "🔄 Creating single normalized embedding from PROCESSED text..."
     );
-    console.log(`📄 Raw resume text length: ${textContent.length} characters`);
-
-    console.log(
-      "🔄 Creating single normalized embedding from RAW resume text..."
-    );
-    const embeddingResult = await model(textContent, {
+    const embeddingResult = await model(processedText, {
       pooling: "mean",
-      normalize: true, // Normalized embeddings (matches Python reference)
+      normalize: true,
     });
     const embedding = Array.from(embeddingResult.data);
 
@@ -345,29 +165,93 @@ export const uploadEmbedding = async (req, res) => {
       `🧮 Embedding vector created with ${embedding.length} dimensions`
     );
 
-    // 4️⃣ Save single resume embedding to MongoDB
-    console.log(`💾 Saving single resume embedding to database...`);
+    // 4️⃣ Save embedding to MongoDB
+    console.log(`💾 Saving embedding to database...`);
     const embeddingDoc = new Embedding({
       userId: req.userId,
       originalFile: req.file.originalname,
-      field: "resume", // Standardized field name for consistent retrieval
-      content: textContent, // Store raw text, not parsed fields
+      field: "resume", // Keeping "resume" as field for consistency or maybe "job_desc"? User didn't specify. Assuming typical usage.
+      content: processedText, // Store PROCESSED text
       embedding,
     });
 
     await embeddingDoc.save();
-    console.log(`✅ Resume embedding saved to database`);
+    console.log(`✅ Embedding saved to database`);
     console.log("🎉 Embedding upload process completed successfully!");
 
+    // Cleanup uploaded file
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (e) {
+      console.warn("Failed to delete uploaded file:", e.message);
+    }
+
     res.json({
-      message: "Text processed successfully",
-      parsed: parsedJSON,
+      message: "File processed and embeddings generated successfully",
       embeddingCount: 1,
       embeddingDimensions: embedding.length,
-      contentLength: textContent.length,
+      contentLength: processedText.length,
     });
   } catch (err) {
     console.error("❌ Upload embedding error:", err);
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
+};
+
+// ----------------- Controller: Generate Embedding from Profile Text -----------------
+export const generateProfileEmbedding = async (req, res) => {
+  try {
+    console.log("🚀 Starting profile embedding generation...");
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: "No profile text provided" });
+    }
+
+    console.log(`📄 Received profile text, length: ${text.length} characters`);
+
+    // 1️⃣ Process with Groq
+    console.log("🔍 Processing profile text with Groq API...");
+    const processedText = await processTextWithGroq(text);
+    console.log(`📋 Processed text length: ${processedText.length} characters`);
+
+    // 2️⃣ Load embedding model
+    console.log("🔄 Loading embedding model...");
+    const model = await loadEmbedModel();
+    console.log("✅ Embedding model loaded");
+
+    // 3️⃣ Create embedding
+    console.log("🔄 Creating normalized embedding from profile text...");
+    const embeddingResult = await model(processedText, {
+      pooling: "mean",
+      normalize: true,
+    });
+    const embedding = Array.from(embeddingResult.data);
+
+    // 4️⃣ Save to MongoDB
+    console.log(`💾 Saving profile embedding to database...`);
+
+    // Optional: Remove old profile embeddings for this user to avoid duplication/stale data
+    await Embedding.deleteMany({ userId: req.userId, field: "profile" });
+
+    const embeddingDoc = new Embedding({
+      userId: req.userId,
+      originalFile: "profile_data",
+      field: "profile",
+      content: processedText,
+      embedding,
+    });
+
+    await embeddingDoc.save();
+    console.log(`✅ Profile embedding saved`);
+
+    res.json({
+      success: true,
+      message: "Profile embedding generated successfully",
+      embeddingDimensions: embedding.length,
+    });
+  } catch (err) {
+    console.error("❌ Profile embedding error:", err);
     res.status(500).json({ error: "Server error", details: err.message });
   }
 };
