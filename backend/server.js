@@ -13,6 +13,7 @@ import freelancerRoutes from "./routes/freelancerRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import recruiterJobRoutes from "./routes/recruiterJobRoutes.js";
 import fs from "fs";
 
@@ -43,7 +44,6 @@ app.use("/api/freelancers", freelancerRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/recruiter/jobs", recruiterJobRoutes);
 
 // Database connection
 const connectDB = async () => {
