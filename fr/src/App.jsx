@@ -13,7 +13,7 @@ import AddEmbeddings from "./pages/AddEmbeddings";
 import FreelancerModule from "./pages/FreelancerModule";
 import FreelancerProfile from "./pages/FreelancerProfile";
 import ResumeBuilder from "./pages/ResumeBuilder";
-import Gitpluse from "./pages/Gitpluse";
+import GitPulse from "./pages/GitPulse";
 import "./App.css";
 
 function App() {
@@ -29,7 +29,7 @@ function App() {
         <Route path="/freelancer-module" element={<FreelancerModule />} />
         <Route path="/freelancer-profile" element={<FreelancerProfile />} />
         <Route path="/resume-builder" element={<ResumeBuilder />} />
-        <Route path="/gitpluse" element={<Gitpluse />} />
+        <Route path="/gitpluse" element={<GitPulse />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

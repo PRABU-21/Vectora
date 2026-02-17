@@ -134,6 +134,21 @@ const userSchema = new mongoose.Schema({
     }],
     languages: mongoose.Schema.Types.Mixed,
   },
+  // GitHub Contribution Calendar
+  contributionCalendar: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  // GitHub Commit Contributions by Repository
+  commitContributionsByRepository: [
+    {
+      name: String,
+      count: Number,
+    }
+  ],
+  // GitHub Streaks
+  currentStreak: { type: Number, default: 0 },
+  longestStreak: { type: Number, default: 0 },
   // Last sync timestamp
   lastGithubSync: {
     type: Date,

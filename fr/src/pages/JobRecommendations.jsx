@@ -7,6 +7,7 @@ import {
   getAppliedJobs,
 } from "../data/api.js";
 import ParticlesBackground from "../components/ParticlesBackground";
+import GoogleTranslate from "../components/GoogleTranslate";
 
 const JobRecommendations = () => {
   const navigate = useNavigate();
@@ -258,6 +259,7 @@ const JobRecommendations = () => {
               </h1>
             </div>
             <div className="flex items-center gap-6">
+              <GoogleTranslate />
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
                   <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
@@ -346,8 +348,8 @@ const JobRecommendations = () => {
               {loading
                 ? "Loading opportunities..."
                 : isPersonalized
-                ? `${jobs.length} AI-matched jobs tailored to your unique profile`
-                : `Explore ${jobs.length} exciting career opportunities`}
+                  ? `${jobs.length} AI-matched jobs tailored to your unique profile`
+                  : `Explore ${jobs.length} exciting career opportunities`}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -565,15 +567,14 @@ const JobRecommendations = () => {
                     onClick={() => handleJobClick(job)}
                   >
                     <div
-                      className={`h-1.5 ${
-                        isPersonalized && index < 3
-                          ? index === 0
-                            ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
-                            : index === 1
+                      className={`h-1.5 ${isPersonalized && index < 3
+                        ? index === 0
+                          ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
+                          : index === 1
                             ? "bg-gradient-to-r from-gray-400 to-gray-600"
                             : "bg-gradient-to-r from-orange-400 to-orange-600"
-                          : "bg-gradient-to-r from-sky-400 to-indigo-600"
-                      }`}
+                        : "bg-gradient-to-r from-sky-400 to-indigo-600"
+                        }`}
                     ></div>
 
                     <div className="p-6 flex flex-col flex-1">
@@ -595,13 +596,12 @@ const JobRecommendations = () => {
                       {isPersonalized && index < 3 && (
                         <div className="mb-2">
                           <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${
-                              index === 0
-                                ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
-                                : index === 1
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white shadow-md ${index === 0
+                              ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
+                              : index === 1
                                 ? "bg-gradient-to-r from-gray-400 to-gray-600"
                                 : "bg-gradient-to-r from-orange-400 to-orange-600"
-                            }`}
+                              }`}
                           >
                             <svg
                               className="w-3 h-3 mr-1"
@@ -722,11 +722,10 @@ const JobRecommendations = () => {
                       <button
                         onClick={(e) => handleApplyToJob(e, job)}
                         disabled={isJobApplied(job.id || job._id || job.jobId)}
-                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all shadow-md group-hover:shadow-lg flex items-center justify-center gap-2 ${
-                          isJobApplied(job.id || job._id || job.jobId)
-                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                            : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
-                        }`}
+                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all shadow-md group-hover:shadow-lg flex items-center justify-center gap-2 ${isJobApplied(job.id || job._id || job.jobId)
+                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                          : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
+                          }`}
                       >
                         {isJobApplied(job.id) ? (
                           <>
@@ -899,11 +898,10 @@ const JobRecommendations = () => {
       {toast && (
         <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
           <div
-            className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${
-              toast.type === "success"
-                ? "bg-gradient-to-r from-green-600 to-emerald-600"
-                : "bg-gradient-to-r from-sky-600 to-indigo-700"
-            } text-white`}
+            className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${toast.type === "success"
+              ? "bg-gradient-to-r from-green-600 to-emerald-600"
+              : "bg-gradient-to-r from-sky-600 to-indigo-700"
+              } text-white`}
           >
             {toast.type === "success" ? (
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -1187,13 +1185,12 @@ const JobRecommendations = () => {
                     disabled={isJobApplied(
                       selectedJob.id || selectedJob._id || selectedJob.jobId
                     )}
-                    className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 ${
-                      isJobApplied(
-                        selectedJob.id || selectedJob._id || selectedJob.jobId
-                      )
-                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
-                    }`}
+                    className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 ${isJobApplied(
+                      selectedJob.id || selectedJob._id || selectedJob.jobId
+                    )
+                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
+                      }`}
                   >
                     {isJobApplied(selectedJob.id) ? (
                       <>

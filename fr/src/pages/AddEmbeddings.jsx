@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadEmbedding } from "../data/api";
 import ParticlesBackground from "../components/ParticlesBackground";
+import GoogleTranslate from "../components/GoogleTranslate";
 
 const AddEmbeddings = () => {
   const navigate = useNavigate();
@@ -95,6 +96,7 @@ const AddEmbeddings = () => {
               </h1>
             </div>
             <div className="flex items-center gap-6">
+              <GoogleTranslate />
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
                   <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
@@ -344,11 +346,10 @@ const AddEmbeddings = () => {
 
                 {uploadMessage && (
                   <div
-                    className={`mt-4 flex items-center gap-3 px-5 py-4 rounded-xl border-2 ${
-                      uploadMessage.includes("success")
-                        ? "bg-green-50 border-green-200"
-                        : "bg-red-50 border-red-200"
-                    }`}
+                    className={`mt-4 flex items-center gap-3 px-5 py-4 rounded-xl border-2 ${uploadMessage.includes("success")
+                      ? "bg-green-50 border-green-200"
+                      : "bg-red-50 border-red-200"
+                      }`}
                   >
                     {uploadMessage.includes("success") ? (
                       <svg
@@ -376,11 +377,10 @@ const AddEmbeddings = () => {
                       </svg>
                     )}
                     <p
-                      className={`font-medium ${
-                        uploadMessage.includes("success")
-                          ? "text-green-700"
-                          : "text-red-700"
-                      }`}
+                      className={`font-medium ${uploadMessage.includes("success")
+                        ? "text-green-700"
+                        : "text-red-700"
+                        }`}
                     >
                       {uploadMessage}
                     </p>

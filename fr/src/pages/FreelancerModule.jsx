@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import ProjectForm from '../components/ProjectForm';
 import ProjectList from '../components/ProjectList';
 import ProjectDetail from '../components/ProjectDetail';
-import { 
-  getProjects, 
+import GoogleTranslate from "../components/GoogleTranslate";
+import {
+  getProjects,
   createProject,
   updateProject,
   getMyProjects,
@@ -27,9 +28,9 @@ const FreelancerModule = () => {
   const [deliverySubmitting, setDeliverySubmitting] = useState({});
   const [deliveryErrors, setDeliveryErrors] = useState({});
   const [deliveryAcknowledged, setDeliveryAcknowledged] = useState({});
-  
+
   // Sample proposals data for demonstration (removed — using live API)
-  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -37,14 +38,14 @@ const FreelancerModule = () => {
       return;
     }
     setError(null);
-    
+
     if (activeTab === 'my-proposals') {
       fetchMyProposals();
     } else {
       fetchProjects();
     }
   }, [activeTab]);
-  
+
   const fetchMyProposals = async () => {
     try {
       setLoading(true);
@@ -57,7 +58,7 @@ const FreelancerModule = () => {
       setLoading(false);
     }
   };
-  
+
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -99,7 +100,7 @@ const FreelancerModule = () => {
     try {
       // Update project status via API
       const updatedProject = await updateProject(id, { status: newStatus });
-      setProjects(projects.map(project => 
+      setProjects(projects.map(project =>
         (project._id || project.id) === id ? { ...project, status: newStatus } : project
       ));
     } catch (error) {
@@ -220,7 +221,7 @@ const FreelancerModule = () => {
     const status = project.status || '';
     const normalizedStatus = status.toLowerCase();
 
-    switch(activeTab) {
+    switch (activeTab) {
       case 'in-progress':
         return normalizedStatus === PROJECT_STATUSES.IN_PROGRESS.toLowerCase() || normalizedStatus === PROJECT_STATUSES.OPEN.toLowerCase();
       case 'closed':
@@ -272,6 +273,7 @@ const FreelancerModule = () => {
               </span>
             </div>
             <div className="flex items-center gap-4">
+              <GoogleTranslate />
               <button
                 onClick={() => navigate('/dashboard')}
                 className="text-gray-700 hover:text-red-600 font-medium transition-colors"
@@ -294,55 +296,50 @@ const FreelancerModule = () => {
         <div className="flex flex-wrap gap-2 mb-8">
           <button
             onClick={() => setActiveTab('post-project')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'post-project'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'post-project'
+              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
           >
             Post Project
           </button>
           <button
             onClick={() => setActiveTab('view-projects')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'view-projects'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'view-projects'
+              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
           >
             View Projects
           </button>
           <button
             onClick={() => setActiveTab('my-projects')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'my-projects'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'my-projects'
+              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
           >
             My Projects
           </button>
           <button
             onClick={() => setActiveTab('my-proposals')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'my-proposals'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'my-proposals'
+              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
           >
             My Proposals
           </button>
           <button
             onClick={() => setActiveTab('in-progress')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'in-progress'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'in-progress'
+              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
           >
             In Progress
           </button>
-          
+
         </div>
 
         {error && (
@@ -364,11 +361,11 @@ const FreelancerModule = () => {
             <div>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">
-                  {activeTab === 'view-projects' ? 'All Projects' : 
-                   activeTab === 'my-projects' ? 'My Projects' :
-                   activeTab === 'my-proposals' ? 'My Proposals' :
-                   activeTab === 'in-progress' ? 'In Progress Projects' : 
-                   'Projects'}
+                  {activeTab === 'view-projects' ? 'All Projects' :
+                    activeTab === 'my-projects' ? 'My Projects' :
+                      activeTab === 'my-proposals' ? 'My Proposals' :
+                        activeTab === 'in-progress' ? 'In Progress Projects' :
+                          'Projects'}
                 </h2>
                 <div className="text-sm text-gray-500">
                   Showing {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
@@ -383,7 +380,7 @@ const FreelancerModule = () => {
                       {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} found
                     </div>
                   </div>
-                  
+
                   {proposals.length > 0 ? (
                     <div className="space-y-4">
                       {proposals.map((proposal) => (
@@ -397,7 +394,7 @@ const FreelancerModule = () => {
                                 </span>
                               </div>
                               <p className="text-gray-600 mb-3">{proposal.description}</p>
-                              
+
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                                 <div>
                                   <span className="font-medium">Cost:</span> \${proposal.expectedCost}
@@ -519,11 +516,11 @@ const FreelancerModule = () => {
               ) : filteredProjects.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-2xl">
                   <p className="text-gray-500 text-lg mb-3">
-                    {activeTab === 'my-projects' 
+                    {activeTab === 'my-projects'
                       ? 'You have not created any projects yet.'
                       : activeTab === 'in-progress'
-                      ? 'No projects are currently in progress.'
-                      : 'No projects found.'}
+                        ? 'No projects are currently in progress.'
+                        : 'No projects found.'}
                   </p>
                   <div className="flex justify-center gap-3">
                     {activeTab !== 'view-projects' && (
@@ -545,7 +542,7 @@ const FreelancerModule = () => {
                   </div>
                 </div>
               ) : (
-                <ProjectList 
+                <ProjectList
                   projects={filteredProjects}
                   onStatusChange={updateProjectStatusHandler}
                   showStatusControls={activeTab === 'my-projects'}

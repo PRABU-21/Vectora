@@ -115,7 +115,7 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const { confirmPassword, ...signupData } = formData;
+      const { confirmPassword: _confirmPassword, ...signupData } = formData;
       const data = await signup(signupData);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
