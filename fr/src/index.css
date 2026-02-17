@@ -351,75 +351,121 @@
   scrollbar-width: none;
 }
 
-/* Google Translate Widget Styles */
-/* Google Translate Widget Styles - Aggressive Overrides */
-/* Hide the top banner */
-.goog-te-banner-frame {
+/* ===================================================================
+   Google Translate Widget Styles - Production Ready Banner Removal
+   ================================================================= */
+
+/* Reset body and html positioning - Prevent Google's margin injection */
+html,
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  top: 0 !important;
+}
+
+/* Force body to stay at top and prevent layout shift */
+body {
+  position: relative !important;
+  margin-top: 0 !important;
+  top: 0 !important;
+}
+
+/* Hide Google Translate top banner frame (main culprit) */
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame,
+.skiptranslate.goog-te-banner-frame {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
+  min-height: 0 !important;
   width: 0 !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  z-index: -1000 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  z-index: -9999 !important;
 }
 
-/* Hide the new Google Translate top frame */
-.skiptranslate.goog-te-gadget {
+/* Hide the balloon/tooltip frame that shows "Show original" */
+.goog-te-balloon-frame {
   display: none !important;
   visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
 }
 
-/* Hide the tooltip that appears on hover */
-.goog-tooltip {
+/* Hide tooltip on hover */
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-tooltip:focus {
   display: none !important;
   visibility: hidden !important;
+  opacity: 0 !important;
 }
 
-.goog-tooltip:hover {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-/* Remove the blue highlight on translated text */
-.goog-text-highlight {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* Hide the original Google Translate element */
-#google_translate_element {
+/* Hide the default Google Translate widget (we use custom UI) */
+#google_translate_element,
+.goog-te-gadget {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
   width: 0 !important;
   overflow: hidden !important;
   clip: rect(0, 0, 0, 0) !important;
+  position: absolute !important;
 }
 
-/* Hide any iframes injected by Google */
-iframe.goog-te-banner-frame {
+/* Remove blue highlight on translated text */
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+/* Hide Google branding */
+.goog-logo-link,
+.goog-te-gadget span,
+.goog-te-menu-value span {
+  display: none !important;
+}
+
+/* Prevent font tags from having background colors */
+font {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Override any iframe that Google might inject */
+iframe[class*="goog-te"],
+iframe[id*="goog-te"] {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
   width: 0 !important;
 }
 
-/* Force body to stay at top */
-body {
-  top: 0 !important;
-  margin-top: 0 !important;
-  position: static !important;
-}
-
-/* Hide the "Original text" popup */
-.goog-te-balloon-frame {
+/* Additional safeguards */
+body > .skiptranslate {
   display: none !important;
-  visibility: hidden !important;
 }
 
-font {
-  background-color: transparent !important;
-  box-shadow: none !important;
+/* Ensure navbar stays at very top */
+nav,
+header,
+[role="navigation"],
+[role="banner"] {
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+/* Remove any top spacing Google might add to first child of body */
+body > *:first-child {
+  margin-top: 0 !important;
 }

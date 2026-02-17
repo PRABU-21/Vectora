@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cleanupGoogleTranslate } from "../utils/googleTranslateCleanup";
 
 const LANGUAGES = [
     { label: "Afrikaans", code: "af", flag: "🇿🇦" },
@@ -113,26 +114,11 @@ const GoogleTranslate = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
-        // 1. Inject Styles Programmatically (Backup to CSS)
-        const addStyles = () => {
-            const style = document.createElement("style");
-            style.id = "google-translate-overrides";
-            style.innerHTML = `
-                .goog-te-banner-frame { display: none !important; }
-                .goog-te-gadget { display: none !important; }
-                body { top: 0px !important; margin-top: 0px !important; position: static !important; }
-                .goog-tooltip { display: none !important; }
-                .goog-tooltip:hover { display: none !important; }
-                .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
-                iframe.goog-te-banner-frame { display: none !important; visibility: hidden !important; width: 0 !important; height: 0 !important; }
-            `;
-            if (!document.getElementById("google-translate-overrides")) {
-                document.head.appendChild(style);
-            }
-        };
-        addStyles();
+        // Initialize Google Translate cleanup
+        // This will hide the banner and prevent layout shifts
+        const disposeCleanup = cleanupGoogleTranslate();
 
-        // 2. Initialize Google Translate Script
+        // Initialize Google Translate Script
         if (!document.querySelector("#google-translate-script")) {
             const script = document.createElement("script");
             script.id = "google-translate-script";
@@ -152,72 +138,11 @@ const GoogleTranslate = () => {
             };
         }
 
-        // 3. MutationObserver for Real-time Cleanup
-        const observerCallback = (mutationsList) => {
-            for (const mutation of mutationsList) {
-                // If Google tries to change body styles (top or margin-top)
-                if (mutation.type === "attributes" && mutation.attributeName === "style") {
-                    const body = document.body;
-                    if (body.style.top !== "0px" || body.style.marginTop !== "0px") {
-                        body.style.top = "0px";
-                        body.style.marginTop = "0px";
-                        body.style.position = ""; // Reset position if Google changes it
-                    }
-                }
-
-                // If Google injects new nodes (like the banner iframe)
-                if (mutation.type === "childList") {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.nodeType === 1) { // Element node
-                            // Check for banner frame
-                            if (node.classList && (node.classList.contains("goog-te-banner-frame") || node.tagName === "IFRAME")) {
-                                if (node.tagName === "IFRAME" && node.classList.contains("goog-te-banner-frame")) {
-                                    node.style.display = "none";
-                                    node.remove(); // Aggressively remove it
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-
-            // Fallback check to ensure body is clean
-            if (document.body.style.top !== "0px") {
-                document.body.style.top = "0px";
-            }
-        };
-
-        const observer = new MutationObserver(observerCallback);
-
-        // Start Observing
-        observer.observe(document.body, {
-            attributes: true,
-            childList: true,
-            subtree: true, // Watch subtree to catch iframe injections anywhere
-            attributeFilter: ["style"] // Only watch style changes on body
-        });
-
-        // Also watch documentElement (html tag) just in case
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ["style"]
-        });
-
-        // Initial Cleanup Run
-        const initialCleanup = () => {
-            const banner = document.querySelector(".goog-te-banner-frame");
-            if (banner) {
-                banner.style.display = "none";
-                banner.remove();
-            }
-            document.body.style.top = "0px";
-            document.body.style.marginTop = "0px";
-        };
-        initialCleanup();
-
+        // Cleanup on unmount
         return () => {
-            observer.disconnect();
-            // Optional: remove script if needed, but usually better to leave it in SPAs
+            if (disposeCleanup) {
+                disposeCleanup();
+            }
         };
     }, []);
 
