@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useResume } from '../context/ResumeContext';
+import { useResume, ResumeContext } from '../context/ResumeContext';
 import TemplateSelector from './templates/TemplateSelector';
 import TEMPLATES from './templates/TemplateRegistry';
 import { Suspense } from 'react';
@@ -12,6 +12,7 @@ const TemplateSelectionPage = ({ onBack, onSelectTemplate }) => {
     style: 'professional',
     photo: 'any' // 'any', 'with', 'without'
   });
+  const [showAll, setShowAll] = useState(false);
   
   // Initialize template variants from resumeData
   useEffect(() => {
@@ -22,36 +23,20 @@ const TemplateSelectionPage = ({ onBack, onSelectTemplate }) => {
   
   const [templateVariants, setTemplateVariants] = useState({});
 
-  const templates = [
-    {
-      id: 'classic',
-      name: TEMPLATES.classic.name,
-      description: TEMPLATES.classic.description,
-      experienceLevels: ['all', 'no-experience', 'less-than-3', '3-5', '5-10', '10-plus'],
-      isRecommended: resumeData.personal.isStudent ? false : (resumeData.personal.experienceLevel === 'less-than-3' || resumeData.personal.experienceLevel === '3-5')
-    },
-    {
-      id: 'modern',
-      name: TEMPLATES.modern.name,
-      description: TEMPLATES.modern.description,
-      experienceLevels: ['all', '3-5', '5-10', '10-plus'],
-      isRecommended: resumeData.personal.experienceLevel === '5-10' || resumeData.personal.experienceLevel === '10-plus'
-    },
-    {
-      id: 'skills',
-      name: TEMPLATES.skills.name,
-      description: TEMPLATES.skills.description,
-      experienceLevels: ['all', 'no-experience', 'less-than-3', '3-5'],
-      isRecommended: false
-    },
-    {
-      id: 'academic',
-      name: TEMPLATES.academic.name,
-      description: TEMPLATES.academic.description,
-      experienceLevels: ['all', 'no-experience', 'less-than-3'],
-      isRecommended: resumeData.personal.isStudent || resumeData.personal.experienceLevel === 'no-experience'
-    }
-  ];
+  const templates = Object.values(TEMPLATES).map((template) => {
+    const exp = resumeData.personal.experienceLevel;
+    const isStudent = resumeData.personal.isStudent;
+    const recommended =
+      (isStudent && template.id.includes('academic')) ||
+      (!isStudent && (exp === 'less-than-3' || exp === '3-5') && template.id.includes('skills')) ||
+      ((exp === '5-10' || exp === '10-plus') && template.id.includes('modern')) ||
+      template.id === currentTemplate;
+
+    return {
+      ...template,
+      isRecommended: Boolean(recommended)
+    };
+  });
 
   const experienceLevels = [
     { id: 'all', label: 'All Levels' },
@@ -115,6 +100,8 @@ const TemplateSelectionPage = ({ onBack, onSelectTemplate }) => {
       matchesFilters: matchesFilters
     };
   });
+
+  const visibleTemplates = showAll ? filteredTemplates : filteredTemplates.slice(0, 12);
 
   const handleFilterChange = (filterType, value) => {
     setSelectedFilters(prev => ({
@@ -247,8 +234,13 @@ const TemplateSelectionPage = ({ onBack, onSelectTemplate }) => {
           {/* Main Area - Template Cards */}
           <div className="lg:w-3/4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {filteredTemplates.map(template => {
+              {visibleTemplates.map(template => {
                 const variant = templateVariants[template.id] || {};
+                const userBlurb = [
+                  resumeData.personal.fullName || 'Your Name',
+                  resumeData.personal.title || 'Role',
+                  resumeData.personal.educationLevel || 'Profile'
+                ].filter(Boolean).slice(0, 3).join(' • ');
                 return (
                 <div key={template.id} className={`bg-white rounded-2xl shadow-md border ${template.matchesFilters ? 'border-blue-200 shadow-lg' : 'border-gray-200'} hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden`}>
                   <div className="p-5">
@@ -256,6 +248,7 @@ const TemplateSelectionPage = ({ onBack, onSelectTemplate }) => {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-800 mb-1">{template.name}</h3>
                         <p className="text-gray-600 text-xs">{template.description}</p>
+                        <p className="text-gray-500 text-[11px] mt-1 font-medium">{userBlurb}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         {template.isRecommended && (
@@ -275,12 +268,14 @@ const TemplateSelectionPage = ({ onBack, onSelectTemplate }) => {
                       <div className="h-80 overflow-hidden flex items-start justify-center">
                         <div className="transform scale-[0.55] origin-top">
                           <Suspense fallback={<div className="text-xs text-center py-8 text-gray-500">Loading preview...</div>}>
-                            <div className="max-w-[210mm] bg-white text-black text-xs">
-                              <TemplateSelector 
-                                currentTemplateId={template.id}
-                                templateVariants={templateVariants[template.id] || {}}
-                              />
-                            </div>
+                            <ResumeContext.Provider value={{ resumeData, currentTemplate }}>
+                              <div className="max-w-[210mm] bg-white text-black text-xs">
+                                <TemplateSelector 
+                                  currentTemplateId={template.id}
+                                  templateVariants={templateVariants[template.id] || {}}
+                                />
+                              </div>
+                            </ResumeContext.Provider>
                           </Suspense>
                         </div>
                       </div>
@@ -374,6 +369,16 @@ const TemplateSelectionPage = ({ onBack, onSelectTemplate }) => {
                 </div>
                 )})}
             </div>
+            {filteredTemplates.length > 12 && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={() => setShowAll(!showAll)}
+                  className="px-5 py-3 text-sm font-semibold rounded-xl border border-gray-200 bg-white hover:border-indigo-300 hover:text-indigo-700 transition-all"
+                >
+                  {showAll ? 'Show fewer templates' : `Show all ${filteredTemplates.length} ATS templates`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
         

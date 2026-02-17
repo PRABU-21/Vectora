@@ -86,10 +86,13 @@ const SessionManager = () => {
 };
 
 function App() {
+  const user = getUser();
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
   return (
     <Router>
       <SessionManager />
-      <ChatWidget />
+      {user && token && <ChatWidget userRole={user.role} />}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

@@ -2,9 +2,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ParticlesBackground from "../components/ParticlesBackground";
 import GoogleTranslate from "../components/GoogleTranslate";
-
-// Dev server for the embedded resume builder (see fr/resumebuilder/package.json)
-const BUILDER_URL = "http://localhost:5174";
+import ResumeBuilderApp from "../resumeBuilder/App.jsx";
+import { ResumeProvider } from "../resumeBuilder/context/ResumeContext.jsx";
 
 const ResumeBuilder = () => {
   const navigate = useNavigate();
@@ -76,54 +75,17 @@ const ResumeBuilder = () => {
           <div className="max-w-3xl space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold">Craft a standout resume</h2>
             <p className="text-lg text-indigo-100">
-              Launch the dedicated resume builder to design, edit, and export polished resumes. If the builder doesn&apos;t load, start the resumebuilder dev server and refresh this page.
+              Build, preview, and export resumes without leaving Vectora.
             </p>
-            <div className="flex gap-3 flex-wrap">
-              <a
-                href={BUILDER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-white text-indigo-700 px-5 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition inline-flex items-center gap-2"
-              >
-                Open in new tab
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7h4m0 0v4m0-4l-5 5m-2 5H7a2 2 0 01-2-2V9a2 2 0 012-2h4"
-                  />
-                </svg>
-              </a>
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-white/10 border border-white/30 text-white px-4 py-3 rounded-xl font-semibold hover:bg-white/20 transition"
-              >
-                Refresh embed
-              </button>
-            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-
-          <div className="relative bg-gray-900">
-            <iframe
-              title="Resume Builder"
-              src={BUILDER_URL}
-              className="w-full h-[85vh] border-0"
-              allow="clipboard-write"
-            />
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/5 via-transparent to-black/5" />
-          </div>
-
+          <ResumeProvider>
+            <ResumeBuilderApp />
+          </ResumeProvider>
         </div>
       </main>
     </div>

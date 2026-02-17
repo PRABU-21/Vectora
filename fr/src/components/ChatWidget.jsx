@@ -3,13 +3,21 @@ import { sendChatMessage } from "../data/api";
 
 const MAX_LEN = 2000;
 
-const ChatWidget = () => {
+const ChatWidget = ({ userRole }) => {
+  const role = userRole || "applicant";
+  const assistantGreeting = useMemo(() => {
+    if (role === "recruiter") {
+      return "Hi! I can help shortlist applicants, summarize profiles, and draft outreach.";
+    }
+    return "Hi! I can explain match scores, suggest missing skills, or give quick career tips.";
+  }, [role]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState(() => [
     {
       role: "assistant",
-      content: "Hi! I can explain match scores, suggest missing skills, or give quick career tips.",
+      content: assistantGreeting,
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -66,11 +74,11 @@ const ChatWidget = () => {
 
   const accent = useMemo(
     () => ({
-      gradient: "from-sky-600 via-blue-600 to-indigo-700",
-      soft: "bg-sky-50",
-      border: "border-sky-100",
+      gradient: role === "recruiter" ? "from-emerald-600 via-green-600 to-teal-700" : "from-sky-600 via-blue-600 to-indigo-700",
+      soft: role === "recruiter" ? "bg-emerald-50" : "bg-sky-50",
+      border: role === "recruiter" ? "border-emerald-100" : "border-sky-100",
     }),
-    [],
+    [role],
   );
 
   return (
@@ -98,7 +106,7 @@ const ChatWidget = () => {
               </div>
               <div>
                 <p className="text-xs text-white/80">Vectora Assistant</p>
-                <p className="text-sm font-semibold">Ask anything</p>
+                <p className="text-sm font-semibold">{role === "recruiter" ? "Hiring help" : "Career help"}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -147,7 +155,11 @@ const ChatWidget = () => {
                     handleSend();
                   }
                 }}
-                placeholder={isAuthed ? "Ask about matches, skills, careers..." : "Log in to start chatting"}
+                placeholder={isAuthed
+                  ? role === "recruiter"
+                    ? "Ask about applicants, outreach, or job posts..."
+                    : "Ask about matches, skills, or resumes..."
+                  : "Log in to start chatting"}
                 className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600"
               />
               <button
