@@ -24,6 +24,12 @@ export const signup = async (req, res) => {
       email,
       password,
       phoneNumber,
+      role,
+      companyName,
+      companyDescription,
+      companyIndustry,
+      companyTechStack = [],
+      teamMembers = [],
       city,
       state,
       country,
@@ -37,8 +43,17 @@ export const signup = async (req, res) => {
       employmentType,
     } = req.body;
 
-    // Normalize email for consistent lookups
+    // Normalize for consistent lookups
     const normalizedEmail = (email || "").toLowerCase();
+    const normalizedRole = (role || "applicant").toLowerCase();
+
+    if (!["applicant", "recruiter"].includes(normalizedRole)) {
+      return res
+        .status(400)
+        .json({ message: "Role must be applicant or recruiter" });
+    }
+
+    // Note: recruiter company fields are now optional to allow quicker onboarding.
 
     // Check if user already exists
     const userExists = await User.findOne({ email: normalizedEmail });
@@ -51,7 +66,18 @@ export const signup = async (req, res) => {
       name,
       email: normalizedEmail,
       password,
+      role: normalizedRole,
       phoneNumber,
+      company:
+        normalizedRole === "recruiter"
+          ? {
+              name: companyName,
+              description: companyDescription,
+              industry: companyIndustry,
+              techStack: companyTechStack,
+              teamMembers,
+            }
+          : undefined,
       location: {
         city,
         state,
@@ -82,6 +108,8 @@ export const signup = async (req, res) => {
         preferredJobRoles: user.preferredJobRoles,
         preferredLocations: user.preferredLocations,
         employmentType: user.employmentType,
+        role: user.role,
+        company: user.company,
         token: generateToken(user._id),
       });
     } else {
@@ -102,7 +130,9 @@ export const login = async (req, res) => {
     const normalizedEmail = (email || "").toLowerCase();
 
     // Check for user email
-    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+    const user = await User.findOne({ email: normalizedEmail }).select(
+      "+password",
+    );
 
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
@@ -130,6 +160,8 @@ export const login = async (req, res) => {
       preferredLocations: user.preferredLocations,
       employmentType: user.employmentType,
       resume: user.resume,
+      role: user.role,
+      company: user.company,
       token: generateToken(user._id),
     });
   } catch (error) {

@@ -10,6 +10,15 @@ const Signup = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "applicant",
+    companyName: "",
+    companyWebsite: "",
+    companyLocation: "",
+    designation: "",
+    companyDescription: "",
+    companyIndustry: "",
+    companyTechStack: [],
+    teamMembers: [],
     phoneNumber: "",
     city: "",
     state: "",
@@ -27,43 +36,73 @@ const Signup = () => {
     skill: "",
     level: "Beginner",
   });
+  const [preferredJobRoleInput, setPreferredJobRoleInput] = useState("");
+  const [preferredLocationInput, setPreferredLocationInput] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const steps = [
+  const applicantSteps = [
     { number: 1, title: "Account", description: "Basic information" },
     { number: 2, title: "Location", description: "Where you're based" },
     { number: 3, title: "Professional", description: "Your career details" },
     { number: 4, title: "Skills", description: "What you know" },
   ];
 
+  const recruiterSteps = [
+    { number: 1, title: "Recruiter", description: "Account details" },
+  ];
+
+  const steps = formData.role === "recruiter" ? recruiterSteps : applicantSteps;
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
     setError("");
   };
 
   const handleNext = () => {
     if (currentStep === 1) {
-      if (
-        !formData.name ||
-        !formData.email ||
-        !formData.password ||
-        !formData.confirmPassword ||
-        !formData.phoneNumber
-      ) {
-        setError("Please fill in all required fields");
-        return;
-      }
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
-        return;
-      }
-      if (formData.password.length < 6) {
-        setError("Password must be at least 6 characters");
-        return;
+      if (formData.role === "recruiter") {
+        if (
+          !formData.name ||
+          !formData.email ||
+          !formData.password ||
+          !formData.phoneNumber ||
+          !formData.companyName ||
+          !formData.companyWebsite ||
+          !formData.companyLocation ||
+          !formData.designation
+        ) {
+          setError("Please fill in all required fields");
+          return;
+        }
+        if (formData.password.length < 6) {
+          setError("Password must be at least 6 characters");
+          return;
+        }
+      } else {
+        if (
+          !formData.name ||
+          !formData.email ||
+          !formData.password ||
+          !formData.confirmPassword ||
+          !formData.role ||
+          !formData.phoneNumber
+        ) {
+          setError("Please fill in all required fields");
+          return;
+        }
+        if (formData.password !== formData.confirmPassword) {
+          setError("Passwords do not match");
+          return;
+        }
+        if (formData.password.length < 6) {
+          setError("Password must be at least 6 characters");
+          return;
+        }
       }
     }
 
@@ -78,40 +117,81 @@ const Signup = () => {
 
   const handleAddSkill = () => {
     if (skillInput.skill.trim()) {
-      setFormData({
-        ...formData,
-        primarySkills: [...formData.primarySkills, { ...skillInput }],
-      });
+      setFormData((prev) => ({
+        ...prev,
+        primarySkills: [...prev.primarySkills, { ...skillInput }],
+      }));
       setSkillInput({ skill: "", level: "Beginner" });
     }
   };
 
   const handleRemoveSkill = (index) => {
-    setFormData({
-      ...formData,
-      primarySkills: formData.primarySkills.filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      primarySkills: prev.primarySkills.filter((_, i) => i !== index),
+    }));
   };
 
-  const handleAddTag = (field, value) => {
-    if (value.trim() && !formData[field].includes(value.trim())) {
-      setFormData({
-        ...formData,
-        [field]: [...formData[field], value.trim()],
-      });
+  const handleAddPreferredJobRole = () => {
+    if (preferredJobRoleInput.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        preferredJobRoles: prev.preferredJobRoles.includes(
+          preferredJobRoleInput.trim(),
+        )
+          ? prev.preferredJobRoles
+          : [...prev.preferredJobRoles, preferredJobRoleInput.trim()],
+      }));
+      setPreferredJobRoleInput("");
+    }
+  };
+
+  const handleAddPreferredLocation = () => {
+    if (preferredLocationInput.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        preferredLocations: prev.preferredLocations.includes(
+          preferredLocationInput.trim(),
+        )
+          ? prev.preferredLocations
+          : [...prev.preferredLocations, preferredLocationInput.trim()],
+      }));
+      setPreferredLocationInput("");
     }
   };
 
   const handleRemoveTag = (field, index) => {
-    setFormData({
-      ...formData,
-      [field]: formData[field].filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    if (formData.role === "recruiter") {
+      if (
+        !formData.name ||
+        !formData.email ||
+        !formData.password ||
+        !formData.phoneNumber ||
+        !formData.companyName ||
+        !formData.companyWebsite ||
+        !formData.companyLocation ||
+        !formData.designation
+      ) {
+        setError("Please fill in all required fields");
+        return;
+      }
+      if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters");
+        return;
+      }
+    } else if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -129,9 +209,202 @@ const Signup = () => {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1:
+      case 1: {
+        const roleSelector = (
+          <div>
+            <p className="block text-sm font-semibold text-gray-700 mb-3">
+              Sign up as *
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {["applicant", "recruiter"].map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => {
+                    setFormData((prev) => ({ ...prev, role }));
+                    setCurrentStep(1);
+                    setError("");
+                  }}
+                  className={`flex items-center gap-3 w-full px-4 py-3 border rounded-xl transition-all duration-200 text-left
+                    ${
+                      formData.role === role
+                        ? "border-red-500 bg-red-50 text-red-700 shadow-sm"
+                        : "border-gray-300 hover:border-red-300"
+                    }
+                  `}
+                >
+                  <span className="flex-1 capitalize font-semibold">
+                    {role}
+                  </span>
+                  {formData.role === role && (
+                    <svg
+                      className="w-5 h-5 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+        if (formData.role === "recruiter") {
+          return (
+            <div className="space-y-5">
+              {roleSelector}
+
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  Full Name *
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  Work Email *
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="you@company.com"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  Password *
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="Minimum 6 characters"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phoneNumber"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  Phone Number *
+                </label>
+                <input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  required
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Company Name *
+                </label>
+                <input
+                  name="companyName"
+                  type="text"
+                  required
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="Acme Corp"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Company Website *
+                </label>
+                <input
+                  name="companyWebsite"
+                  type="url"
+                  required
+                  value={formData.companyWebsite}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="https://www.company.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Company Location *
+                </label>
+                <input
+                  name="companyLocation"
+                  type="text"
+                  required
+                  value={formData.companyLocation}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="City, Country"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Designation *
+                </label>
+                <input
+                  name="designation"
+                  type="text"
+                  required
+                  value={formData.designation}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  placeholder="Recruiter / Talent Lead"
+                />
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div className="space-y-5">
+            {roleSelector}
+
             <div>
               <label
                 htmlFor="name"
@@ -228,32 +501,12 @@ const Signup = () => {
             </div>
           </div>
         );
+      }
 
       case 2:
         return (
           <div className="space-y-5">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </div>
               <p className="text-gray-600">
                 Tell us where you're located (optional)
               </p>
@@ -469,7 +722,6 @@ const Signup = () => {
               </p>
             </div>
 
-            {/* Skills Section */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Primary Skills
@@ -530,18 +782,18 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Preferred Job Roles */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Preferred Job Roles
               </label>
               <input
                 type="text"
-                onKeyPress={(e) => {
+                value={preferredJobRoleInput}
+                onChange={(e) => setPreferredJobRoleInput(e.target.value)}
+                onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    handleAddTag("preferredJobRoles", e.target.value);
-                    e.target.value = "";
+                    handleAddPreferredJobRole();
                   }
                 }}
                 className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
@@ -568,18 +820,18 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Preferred Locations */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Preferred Locations
               </label>
               <input
                 type="text"
-                onKeyPress={(e) => {
+                value={preferredLocationInput}
+                onChange={(e) => setPreferredLocationInput(e.target.value)}
+                onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    handleAddTag("preferredLocations", e.target.value);
-                    e.target.value = "";
+                    handleAddPreferredLocation();
                   }
                 }}
                 className="block w-full px-4 py-3.5 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
@@ -656,8 +908,8 @@ const Signup = () => {
                     currentStep > step.number
                       ? "bg-white text-red-600"
                       : currentStep === step.number
-                      ? "bg-white/30 backdrop-blur-sm border-2 border-white text-white"
-                      : "bg-white/10 backdrop-blur-sm text-white/60"
+                        ? "bg-white/30 backdrop-blur-sm border-2 border-white text-white"
+                        : "bg-white/10 backdrop-blur-sm text-white/60"
                   }`}
                 >
                   {currentStep > step.number ? (

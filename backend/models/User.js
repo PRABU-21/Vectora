@@ -21,6 +21,23 @@ const userSchema = new mongoose.Schema({
     minlength: 6,
     select: false,
   },
+  role: {
+    type: String,
+    enum: ["applicant", "recruiter"],
+    default: "applicant",
+  },
+  company: {
+    name: { type: String, trim: true },
+    description: { type: String, trim: true },
+    industry: { type: String, trim: true },
+    techStack: [{ type: String, trim: true }],
+    teamMembers: [
+      {
+        name: { type: String, trim: true },
+        role: { type: String, trim: true },
+      },
+    ],
+  },
   phoneNumber: {
     type: String,
     required: [true, "Please provide a phone number"],
