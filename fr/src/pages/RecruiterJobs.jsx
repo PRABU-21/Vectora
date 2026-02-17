@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  createJob,
-  getMyJobs,
-  getJobApplicants,
-  closeJob,
-  bulkUpdateApplicants,
+  recruiterCreateJob,
+  recruiterGetJobs,
+  recruiterGetApplicants,
+  recruiterCloseJob,
+  recruiterBulkUpdate,
 } from "../data/api";
 import ParticlesBackground from "../components/ParticlesBackground";
 import GoogleTranslate from "../components/GoogleTranslate";
@@ -53,8 +53,8 @@ const RecruiterJobs = () => {
   const loadJobs = async () => {
     try {
       setLoading(true);
-      const resp = await getMyJobs();
-      setJobs(resp.jobs || []);
+      const resp = await recruiterGetJobs();
+      setJobs(resp?.jobs || resp || []);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to load jobs");
@@ -80,7 +80,7 @@ const RecruiterJobs = () => {
           .map((s) => s.trim())
           .filter(Boolean),
       };
-      const resp = await createJob(payload);
+      const resp = await recruiterCreateJob(payload);
       if (resp.success) showToast("Job created");
       setForm(emptyForm);
       loadJobs();
@@ -95,7 +95,7 @@ const RecruiterJobs = () => {
   const openApplicants = async (jobId) => {
     try {
       setModal({ open: true, jobId, applicants: [] });
-      const resp = await getJobApplicants(jobId);
+      const resp = await recruiterGetApplicants(jobId);
       setModal({ open: true, jobId, applicants: resp.applications || [] });
     } catch (err) {
       console.error(err);
@@ -105,7 +105,7 @@ const RecruiterJobs = () => {
 
   const handleBulk = async (jobId, action, topN) => {
     try {
-      await bulkUpdateApplicants(jobId, { action, topN });
+      await recruiterBulkUpdate(jobId, { action, topN });
       showToast("Bulk update applied");
       if (modal.open && modal.jobId === jobId) openApplicants(jobId);
     } catch (err) {
@@ -116,7 +116,7 @@ const RecruiterJobs = () => {
 
   const handleCloseJob = async (jobId) => {
     try {
-      await closeJob(jobId);
+      await recruiterCloseJob(jobId);
       showToast("Job closed");
       loadJobs();
     } catch (err) {

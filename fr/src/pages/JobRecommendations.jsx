@@ -200,16 +200,17 @@ const JobRecommendations = () => {
         setAppliedJobs(response.appliedJobs);
       }
     } catch (err) {
-      console.error("Error applying to job:", err);
-
-      // Rollback on error
-      setAppliedJobs(
-        appliedJobs.filter((j) => j.jobId?.toString() !== jobId.toString())
-      );
-
       if (err.response && err.response.status === 409) {
-        showToast("You have already applied to this job", "error");
+        console.log("ℹ️ User already applied to job (409 Conflict). Updating UI state.");
+        showToast("You have already applied to this job", "info");
+        // Optional: Trigger a fresh fetch of applied jobs to ensure sync, 
+        // but keeping the optimistic 'Applied' state is usually sufficient.
       } else {
+        console.error("Error applying to job:", err);
+        // For other errors (500, etc.), rollback the optimistic update
+        setAppliedJobs(
+          appliedJobs.filter((j) => j.jobId?.toString() !== jobId.toString())
+        );
         const errorMsg =
           err.response?.data?.message || "Failed to apply. Please try again.";
         showToast(errorMsg, "error");

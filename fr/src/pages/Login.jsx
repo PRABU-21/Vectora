@@ -9,6 +9,7 @@ const Login = () => {
     email: "",
     password: "",
   });
+  const [role, setRole] = useState("applicant");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,10 +26,14 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const data = await login(formData);
+      const data = await login({ ...formData, role });
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
-      navigate("/dashboard");
+
+      // Send recruiters to their workspace, applicants to the main dashboard
+      const destination =
+        data.role === "recruiter" ? "/recruiter/jobs" : "/dashboard";
+      navigate(destination);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {
@@ -147,7 +152,51 @@ const Login = () => {
               Welcome Back
             </h2>
             <p className="text-gray-600 text-lg">
-              Sign in to continue to your account
+              Sign in as a recruiter or applicant
+            </p>
+          </div>
+
+          <div className="mb-6">
+            <p className="block text-sm font-semibold text-gray-700 mb-3">
+              Sign in as
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {["applicant", "recruiter"].map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setRole(option)}
+                  className={`flex items-center gap-3 w-full px-4 py-3 border rounded-xl transition-all duration-200 text-left
+                    ${
+                      role === option
+                        ? "border-red-500 bg-red-50 text-red-700 shadow-sm"
+                        : "border-gray-300 hover:border-red-300"
+                    }
+                  `}
+                >
+                  <span className="flex-1 capitalize font-semibold">
+                    {option}
+                  </span>
+                  {role === option && (
+                    <svg
+                      className="w-5 h-5 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Recruiters are routed to the recruiter workspace after login.
             </p>
           </div>
 

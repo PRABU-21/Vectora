@@ -94,6 +94,27 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  // Recruiter/candidate facets for semantic scoring
+  resumeText: {
+    type: String,
+    default: "",
+  },
+  embedding: {
+    type: [Number],
+    default: [],
+  },
+  skillsEmbedding: {
+    type: [Number],
+    default: [],
+  },
+  projectsEmbedding: {
+    type: [Number],
+    default: [],
+  },
+  experienceEmbedding: {
+    type: [Number],
+    default: [],
+  },
   parsedProfile: {
     type: Object,
     default: {},

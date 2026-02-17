@@ -9,7 +9,7 @@ import {
   getLeetCodeProfile,
   fetchAndEmbedAdzunaJobs,
 } from "../controllers/jobController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, requireRole } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -29,15 +29,15 @@ router.get("/leetcode/:username", getLeetCodeProfile);
 router.get("/", getAllJobs);
 
 // Get personalized job recommendations based on resume similarity
-// Protected route - requires authentication
-router.get("/recommendations", protect, getJobRecommendations);
+// Protected route - requires authentication & applicant role
+router.get("/recommendations", protect, requireRole("applicant"), getJobRecommendations);
 
 // Apply to a job
-// Protected route - requires authentication
-router.post("/apply", protect, applyToJob);
+// Protected route - requires authentication & applicant role
+router.post("/apply", protect, requireRole("applicant"), applyToJob);
 
 // Get applied jobs for the user
-// Protected route - requires authentication
-router.get("/applied", protect, getAppliedJobs);
+// Protected route - requires authentication & applicant role
+router.get("/applied", protect, requireRole("applicant"), getAppliedJobs);
 
 export default router;
