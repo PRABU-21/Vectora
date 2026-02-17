@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 
-const ResumeContext = createContext();
+export const ResumeContext = createContext();
 
 export const useResume = () => {
   const context = useContext(ResumeContext);
