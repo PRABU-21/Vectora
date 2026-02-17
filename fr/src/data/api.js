@@ -66,6 +66,21 @@ export const uploadEmbedding = async (fileData) => {
   return response.data;
 };
 
+export const generateProfileEmbedding = async (text) => {
+  const token = localStorage.getItem("token");
+  const response = await axios.post(
+    `${API_URL}/embeddings/generate-profile`,
+    { text },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
 // Jobs API calls
 export const getJobs = async () => {
   const response = await api.get("/jobs");

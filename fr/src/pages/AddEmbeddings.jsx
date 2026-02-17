@@ -20,8 +20,8 @@ const AddEmbeddings = () => {
 
     if (!file) return;
 
-    if (!file.name.endsWith(".txt")) {
-      setUploadMessage("Please upload a .txt file only");
+    if (!file.name.endsWith(".pdf")) {
+      setUploadMessage("Please upload a .pdf file only");
       setSelectedFile(null);
       setFileContent("");
       return;
@@ -30,12 +30,9 @@ const AddEmbeddings = () => {
     setSelectedFile(file);
     setUploadMessage("");
 
-    // Read the file content
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setFileContent(e.target.result);
-    };
-    reader.readAsText(file);
+    // For PDF, we can't easily read text on client side without a library.
+    // So we just show the filename and maybe a placeholder functionality.
+    setFileContent("PDF content will be processed on the server.");
   };
 
   const handleFileUpload = async () => {
@@ -180,7 +177,7 @@ const AddEmbeddings = () => {
               Add Embeddings
             </h1>
             <p className="text-xl text-green-100 max-w-2xl mx-auto">
-              Upload text files to generate AI-powered embeddings for enhanced
+              Upload PDF files to generate AI-powered embeddings for enhanced
               job matching and recommendations
             </p>
           </div>
@@ -209,10 +206,10 @@ const AddEmbeddings = () => {
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
-                  Upload Text File
+                  Upload PDF File
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Upload a .txt file containing your text data for embedding
+                  Upload a .pdf file containing your text data for embedding
                   generation
                 </p>
               </div>
@@ -243,8 +240,7 @@ const AddEmbeddings = () => {
                             {selectedFile.name}
                           </h3>
                           <p className="text-sm text-gray-600 mb-3">
-                            {(selectedFile.size / 1024).toFixed(2)} KB •{" "}
-                            {fileContent.length} characters
+                            {(selectedFile.size / 1024).toFixed(2)} KB
                           </p>
                           <div className="flex gap-3">
                             <button
@@ -330,14 +326,14 @@ const AddEmbeddings = () => {
                       Click to upload your file
                     </p>
                     <p className="text-sm text-gray-600 mb-4">
-                      Only .txt files are supported
+                      Only .pdf files are supported
                     </p>
                     <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold group-hover:from-green-700 group-hover:to-emerald-700 transition-all shadow-md group-hover:shadow-lg">
                       Browse Files
                     </div>
                     <input
                       type="file"
-                      accept=".txt"
+                      accept=".pdf"
                       onChange={handleFileChange}
                       className="hidden"
                     />
