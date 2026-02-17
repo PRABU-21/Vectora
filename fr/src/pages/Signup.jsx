@@ -199,7 +199,9 @@ const Signup = () => {
       const data = await signup(signupData);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
-      navigate("/dashboard");
+      const destination =
+        data.role === "recruiter" ? "/recruiter/jobs" : "/dashboard";
+      navigate(destination);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {

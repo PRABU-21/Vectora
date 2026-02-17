@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
+    expiresIn: "15m",
   });
 };
 
@@ -125,9 +125,10 @@ export const signup = async (req, res) => {
 // @access  Public
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     const normalizedEmail = (email || "").toLowerCase();
+    const normalizedRole = role ? role.toLowerCase() : undefined;
 
     // Check for user email
     const user = await User.findOne({ email: normalizedEmail }).select(
@@ -143,6 +144,11 @@ export const login = async (req, res) => {
 
     if (!isPasswordMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // If client supplied a role, enforce that it matches the account's role
+    if (normalizedRole && user.role !== normalizedRole) {
+      return res.status(403).json({ message: `This account is registered as ${user.role}` });
     }
 
     res.json({

@@ -26,6 +26,19 @@ api.interceptors.request.use(
   }
 );
 
+// Auto-logout on 401 to prevent stale/invalid tokens lingering
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth API calls
 export const signup = async (userData) => {
   const response = await api.post("/auth/signup", userData);
@@ -101,6 +114,42 @@ export const saveParsedProfile = async (profile) => {
 
 export const getParsedProfile = async () => {
   const response = await api.get("/resume/profile");
+  return response.data;
+};
+
+// Recruiter job APIs
+export const recruiterCreateJob = async (payload) => {
+  const response = await api.post("/recruiter/jobs", payload);
+  return response.data;
+};
+
+export const recruiterGetJobs = async () => {
+  const response = await api.get("/recruiter/jobs");
+  return response.data?.jobs || [];
+};
+
+export const recruiterGetApplicants = async (jobId) => {
+  const response = await api.get(`/recruiter/jobs/${jobId}/applicants`);
+  return response.data;
+};
+
+export const recruiterBulkUpdate = async (jobId, body) => {
+  const response = await api.post(`/recruiter/jobs/${jobId}/bulk-update`, body);
+  return response.data;
+};
+
+export const recruiterCloseJob = async (jobId) => {
+  const response = await api.patch(`/recruiter/jobs/${jobId}/close`);
+  return response.data;
+};
+
+export const recruiterShortlist = async (body) => {
+  const response = await api.post(`/recruiter/jobs/shortlist`, body);
+  return response.data;
+};
+
+export const getPublicJob = async (jobId) => {
+  const response = await api.get(`/recruiter/jobs/${jobId}/public`);
   return response.data;
 };
 
