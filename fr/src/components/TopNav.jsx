@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import GooeyNav from "./GooeyNav";
 
 const links = [
   { label: "Dashboard", path: "/dashboard" },
@@ -11,6 +12,11 @@ const TopNav = ({ showLogout = true }) => {
   const location = useLocation();
 
   const activePath = useMemo(() => location.pathname, [location.pathname]);
+
+  const navIndex = useMemo(() => {
+    const idx = links.findIndex((l) => activePath.startsWith(l.path));
+    return idx >= 0 ? idx : 0;
+  }, [activePath]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -46,31 +52,22 @@ const TopNav = ({ showLogout = true }) => {
             </span>
           </button>
 
-          <div className="flex items-center gap-4 sm:gap-6">
-            {links.map(({ label, path }) => {
-              const isActive = activePath.startsWith(path);
-              return (
-                <button
-                  key={path}
-                  onClick={() => navigate(path)}
-                  className={`text-sm sm:text-base font-semibold transition-colors px-2 sm:px-3 py-2 rounded-lg ${
-                    isActive ? "text-sky-700 bg-sky-50" : "text-gray-700 hover:text-sky-700"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            <div className="flex items-center gap-6">
+              <GooeyNav
+                items={links.map((l) => ({ label: l.label, href: l.path }))}
+                activeIndex={navIndex}
+                onSelect={(_, item) => navigate(item.href)}
+              />
 
-            {showLogout && (
-              <button
-                onClick={handleLogout}
-                className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-4 sm:px-5 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg"
-              >
-                Logout
-              </button>
-            )}
-          </div>
+              {showLogout && (
+                <button
+                  onClick={handleLogout}
+                  className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-4 sm:px-5 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
         </div>
       </div>
     </nav>

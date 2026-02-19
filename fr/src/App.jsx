@@ -20,6 +20,8 @@ import ChatWidget from "./components/ChatWidget";
 import RecruiterJobs from "./pages/RecruiterJobs";
 import RecruiterApplicants from "./pages/RecruiterApplicants";
 import RecruiterShortlist from "./pages/RecruiterShortlist";
+import PostedJobs from "./pages/PostedJobs";
+import RecruiterProfile from "./pages/RecruiterProfile";
 import JobApply from "./pages/JobApply";
 import "./App.css";
 
@@ -167,6 +169,22 @@ function App() {
           element={
             <ProtectedRoute roles={["recruiter"]}>
               <RecruiterJobs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recruiter/profile"
+          element={
+            <ProtectedRoute roles={["recruiter"]}>
+              <RecruiterProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recruiter/posted"
+          element={
+            <ProtectedRoute roles={["recruiter"]}>
+              <PostedJobs />
             </ProtectedRoute>
           }
         />

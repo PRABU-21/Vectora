@@ -1,16 +1,24 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AddEmbeddingsCard from "../components/AddEmbeddingsCard";
 import ParticlesBackground from "../components/ParticlesBackground";
 import GoogleTranslate from "../components/GoogleTranslate";
+import GooeyNav from "../components/GooeyNav";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [news, setNews] = useState([]);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const role = user?.role || "applicant";
+
+  const navItems = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Profile", href: "/profile" },
+  ];
+  const activeNavIndex = navItems.findIndex((item) => location.pathname.startsWith(item.href));
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -94,7 +102,7 @@ const Dashboard = () => {
               </h1>
             </div>
             <div className="flex items-center gap-6">
-              <GoogleTranslate />
+              {/* <GoogleTranslate /> */}
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
                   <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
@@ -108,25 +116,11 @@ const Dashboard = () => {
                   </span>
                 </div>
               )}
-              <button
-                onClick={() => navigate("/profile")}
-                className="text-gray-700 hover:text-sky-700 font-medium transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span className="hidden sm:inline">Profile</span>
-              </button>
+              <GooeyNav
+                items={navItems}
+                activeIndex={activeNavIndex >= 0 ? activeNavIndex : 0}
+                onSelect={(_, item) => navigate(item.href)}
+              />
               <button
                 onClick={handleLogout}
                 className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
@@ -421,7 +415,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
+            {/* <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
               <div className="relative p-6">
                 <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-indigo-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -465,9 +459,9 @@ const Dashboard = () => {
                   </svg>
                 </button>
               </div>
-            </div>
+            </div> */}
 
-            <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-cyan-200 transform hover:-translate-y-1">
+            {/* <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-cyan-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
               <div className="relative p-6">
                 <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -512,7 +506,7 @@ const Dashboard = () => {
                   </svg>
                 </button>
               </div>
-            </div>
+            </div> */}
 
             <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-green-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
@@ -561,7 +555,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
+            {/* <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
               <div className="relative p-6">
                 <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -600,7 +594,7 @@ const Dashboard = () => {
                   </svg>
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         )}
 

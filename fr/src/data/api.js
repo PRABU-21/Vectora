@@ -145,8 +145,28 @@ export const recruiterGetJobs = async () => {
   return response.data?.jobs || [];
 };
 
+export const getLiveRecruiterJobs = async () => {
+  const response = await api.get("/recruiter/jobs/public");
+  return response.data;
+};
+
 export const recruiterGetApplicants = async (jobId) => {
   const response = await api.get(`/recruiter/jobs/${jobId}/applicants`);
+  return response.data;
+};
+
+export const recruiterGetMatches = async (jobId) => {
+  const response = await api.get(`/recruiter/jobs/${jobId}/matches`);
+  return response.data;
+};
+
+export const recruiterUpdateJob = async (jobId, payload) => {
+  const response = await api.put(`/recruiter/jobs/${jobId}`, payload);
+  return response.data;
+};
+
+export const recruiterDeleteJob = async (jobId) => {
+  const response = await api.delete(`/recruiter/jobs/${jobId}`);
   return response.data;
 };
 

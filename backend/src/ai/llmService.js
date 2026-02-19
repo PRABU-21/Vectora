@@ -22,7 +22,6 @@ Style:
 
 If context is insufficient, say so clearly and stay within scope.`;
 
-// Default to a generally available Groq model; override via GROQ_MODEL if needed
 const modelName = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 
 let groqClient = null;

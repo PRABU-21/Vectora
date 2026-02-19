@@ -56,15 +56,23 @@ export const createJob = async (req, res) => {
 
     const normalizedSkills = normalizeStringList(skills);
     const skillsText = normalizedSkills.length ? normalizedSkills.join(" ") : "";
-    const experienceText = `${parseInt(minExperience, 10) || 0} years experience required`;
+    const minExperienceNumber = Number.isFinite(Number(minExperience)) ? parseInt(minExperience, 10) : 0;
+    const durationMonthsNumber = Number.isFinite(Number(durationMonths)) && Number(durationMonths) > 0 ? parseInt(durationMonths, 10) : 2;
+
+    const experienceText = `${minExperienceNumber} years experience required`;
 
     const [skillsEmbeddingResult, experienceEmbeddingResult] = await Promise.all([
       skillsText ? model(skillsText, { pooling: "mean", normalize: true }) : Promise.resolve(null),
       model(experienceText, { pooling: "mean", normalize: true }),
     ]);
 
+    // Guard against invalid duration input causing invalid dates
     const deadline = new Date();
-    deadline.setMonth(deadline.getMonth() + parseInt(durationMonths, 10));
+    deadline.setMonth(deadline.getMonth() + durationMonthsNumber);
+    if (Number.isNaN(deadline.getTime())) {
+      // Fallback to a simple offset to keep the API resilient
+      deadline.setTime(Date.now() + durationMonthsNumber * 30 * 24 * 60 * 60 * 1000);
+    }
 
     const job = await RecruiterJob.create({
       recruiter: req.user._id,
@@ -73,8 +81,8 @@ export const createJob = async (req, res) => {
       location: location || "Remote",
       description,
       skills: normalizedSkills,
-      minExperience: parseInt(minExperience, 10) || 0,
-      durationMonths: parseInt(durationMonths, 10) || 2,
+      minExperience: minExperienceNumber,
+      durationMonths: durationMonthsNumber,
       deadline,
       embedding,
       skillsEmbedding: skillsEmbeddingResult ? Array.from(skillsEmbeddingResult.data) : [],
@@ -95,6 +103,107 @@ export const createJob = async (req, res) => {
   } catch (error) {
     console.error("createJob error", error);
     return res.status(500).json({ success: false, message: error.message || "Failed to create job" });
+  }
+};
+
+export const updateJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const existing = await RecruiterJob.findOne({ _id: jobId, recruiter: req.user._id });
+    if (!existing) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    const {
+      title,
+      company,
+      location,
+      description,
+      skills = existing.skills,
+      minExperience = existing.minExperience,
+      durationMonths = existing.durationMonths,
+      deadline,
+      status,
+    } = req.body || {};
+
+    const normalizedSkills = normalizeStringList(skills);
+    const minExperienceNumber = Number.isFinite(Number(minExperience)) ? parseInt(minExperience, 10) : existing.minExperience;
+    const durationMonthsNumber = Number.isFinite(Number(durationMonths)) && Number(durationMonths) > 0
+      ? parseInt(durationMonths, 10)
+      : existing.durationMonths;
+
+    // Decide if embeddings must be recomputed
+    const shouldReembed =
+      (description && description !== existing.description) ||
+      minExperienceNumber !== existing.minExperience ||
+      normalizedSkills.join(",") !== normalizeStringList(existing.skills).join(",");
+
+    let embedding = existing.embedding;
+    let skillsEmbedding = existing.skillsEmbedding;
+    let experienceEmbedding = existing.experienceEmbedding;
+
+    if (shouldReembed) {
+      const model = await loadEmbedModel();
+      const descResult = await model(description || existing.description, { pooling: "mean", normalize: true });
+      embedding = Array.from(descResult.data);
+
+      const skillsText = normalizedSkills.length ? normalizedSkills.join(" ") : "";
+      const expText = `${minExperienceNumber} years experience required`;
+
+      const [skillsEmbeddingResult, experienceEmbeddingResult] = await Promise.all([
+        skillsText ? model(skillsText, { pooling: "mean", normalize: true }) : Promise.resolve(null),
+        model(expText, { pooling: "mean", normalize: true }),
+      ]);
+
+      skillsEmbedding = skillsEmbeddingResult ? Array.from(skillsEmbeddingResult.data) : [];
+      experienceEmbedding = experienceEmbeddingResult ? Array.from(experienceEmbeddingResult.data) : [];
+    }
+
+    let nextDeadline = existing.deadline;
+    if (deadline) {
+      const parsed = new Date(deadline);
+      if (!Number.isNaN(parsed.getTime())) {
+        nextDeadline = parsed;
+      }
+    }
+
+    existing.title = title ?? existing.title;
+    existing.company = company ?? existing.company;
+    existing.location = location ?? existing.location;
+    existing.description = description ?? existing.description;
+    existing.skills = normalizedSkills;
+    existing.minExperience = minExperienceNumber;
+    existing.durationMonths = durationMonthsNumber;
+    existing.deadline = nextDeadline;
+    if (status && ["open", "closed", "filled"].includes(status)) {
+      existing.status = status;
+    }
+    existing.embedding = embedding;
+    existing.skillsEmbedding = skillsEmbedding;
+    existing.experienceEmbedding = experienceEmbedding;
+
+    await existing.save();
+
+    return res.status(200).json({ success: true, job: existing });
+  } catch (error) {
+    console.error("updateJob error", error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to update job" });
+  }
+};
+
+export const deleteJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const job = await RecruiterJob.findOne({ _id: jobId, recruiter: req.user._id });
+    if (!job) return res.status(404).json({ success: false, message: "Job not found" });
+
+    await Application.deleteMany({ job: jobId });
+    await job.deleteOne();
+
+    return res.status(200).json({ success: true, message: "Job deleted" });
+  } catch (error) {
+    console.error("deleteJob error", error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to delete job" });
   }
 };
 
@@ -125,7 +234,10 @@ export const getJobApplicants = async (req, res) => {
     if (!job) return res.status(404).json({ success: false, message: "Job not found" });
 
     const applications = await Application.find({ job: jobId })
-      .populate("candidate", "name email skills yearsExperience resumeText embedding skillsEmbedding projectsEmbedding experienceEmbedding")
+      .populate(
+        "candidate",
+        "name email skills yearsExperience totalExperience highestEducation currentStatus location resumeText parsedProfile embedding skillsEmbedding projectsEmbedding experienceEmbedding"
+      )
       .lean();
 
     const scored = applications.map((app) => {
@@ -138,6 +250,12 @@ export const getJobApplicants = async (req, res) => {
         email: candidate.email,
         skills: candidate.skills,
         yearsExperience: candidate.yearsExperience,
+        totalExperience: candidate.totalExperience,
+        highestEducation: candidate.highestEducation,
+        currentStatus: candidate.currentStatus,
+        location: candidate.location,
+        resumeText: candidate.resumeText,
+        parsedProfile: candidate.parsedProfile,
         score: scoredResult.score,
         breakdown: scoredResult.breakdown,
         matchedSkills: scoredResult.matchedSkills,
@@ -162,6 +280,59 @@ export const getJobApplicants = async (req, res) => {
   } catch (error) {
     console.error("getJobApplicants error", error);
     return res.status(500).json({ success: false, message: error.message || "Failed to fetch applicants" });
+  }
+};
+
+export const getJobMatches = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const job = await RecruiterJob.findOne({ _id: jobId, recruiter: req.user._id });
+    if (!job) return res.status(404).json({ success: false, message: "Job not found" });
+
+    const candidates = await User.find({ role: "applicant" })
+      .select(
+        "name email skills yearsExperience totalExperience highestEducation currentStatus location resumeText parsedProfile embedding skillsEmbedding projectsEmbedding experienceEmbedding"
+      )
+      .lean();
+
+    const jobObj = job.toObject();
+
+    const scored = candidates.map((candidate) => {
+      const scoredResult = scoreCandidateForJob(candidate, jobObj);
+      return {
+        candidateId: candidate._id,
+        candidate: candidate.name,
+        email: candidate.email,
+        skills: candidate.skills,
+        yearsExperience: candidate.yearsExperience,
+        totalExperience: candidate.totalExperience,
+        highestEducation: candidate.highestEducation,
+        currentStatus: candidate.currentStatus,
+        location: candidate.location,
+        resumeText: candidate.resumeText,
+        parsedProfile: candidate.parsedProfile,
+        score: scoredResult.score,
+        breakdown: scoredResult.breakdown,
+        matchedSkills: scoredResult.matchedSkills,
+        missingSkills: scoredResult.missingSkills,
+        skillMatch: scoredResult.skillMatch,
+        experienceScore: scoredResult.experienceScore,
+        projectScore: scoredResult.projectScore,
+        similarity: scoredResult.similarity,
+      };
+    });
+
+    scored.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    return res.status(200).json({
+      success: true,
+      job: { id: job._id, title: job.title, company: job.company, deadline: job.deadline, status: job.status },
+      totalCandidates: scored.length,
+      results: scored,
+    });
+  } catch (error) {
+    console.error("getJobMatches error", error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to fetch matches" });
   }
 };
 
@@ -236,6 +407,33 @@ export const getPublicJob = async (req, res) => {
   }
 };
 
+// Public list of live jobs (open & not past deadline)
+export const getPublicJobsList = async (req, res) => {
+  try {
+    const now = new Date();
+    const jobs = await RecruiterJob.find({ status: "open", deadline: { $gte: now } })
+      .sort({ createdAt: -1 })
+      .select("title company location description skills deadline status createdAt");
+
+    const sanitized = jobs.map((job) => ({
+      id: job._id,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      description: job.description,
+      skills: job.skills,
+      deadline: job.deadline,
+      postedAt: job.createdAt,
+      status: job.status,
+    }));
+
+    return res.status(200).json({ success: true, jobs: sanitized });
+  } catch (error) {
+    console.error("getPublicJobsList error", error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to fetch jobs" });
+  }
+};
+
 export const applyToJob = async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -246,37 +444,60 @@ export const applyToJob = async (req, res) => {
     }
 
     const resumeFile = req.file;
-    if (!resumeFile) return res.status(400).json({ success: false, message: "Resume file is required" });
+    const user = await User.findById(req.user._id);
 
-    const resumeText = await safeExtractText(resumeFile.path, resumeFile.originalname);
-    const embedding = await embedText(resumeText || "");
-    const experienceEmbedding = await embedText(`${req.user.totalExperience || 0} years experience`);
-    const skillsEmbedding = Array.isArray(req.user.primarySkills)
-      ? await embedText(req.user.primarySkills.map((s) => s.skill).filter(Boolean).join(" "))
-      : [];
+    let resumeText;
+    let embedding;
+    let experienceEmbedding;
+    let skillsEmbedding;
 
-    // Update user with latest resume facets
-    await User.updateOne(
-      { _id: req.user._id },
-      {
-        resume: resumeFile.filename,
-        resumeText,
-        embedding,
-        experienceEmbedding,
-        skillsEmbedding,
+    if (resumeFile) {
+      resumeText = await safeExtractText(resumeFile.path, resumeFile.originalname);
+      embedding = await embedText(resumeText || "");
+      experienceEmbedding = await embedText(`${user?.totalExperience || 0} years experience`);
+      skillsEmbedding = Array.isArray(user?.primarySkills)
+        ? await embedText(user.primarySkills.map((s) => s.skill).filter(Boolean).join(" "))
+        : [];
+
+      // Update user with latest resume facets
+      await User.updateOne(
+        { _id: req.user._id },
+        {
+          resume: resumeFile.filename,
+          resumeText,
+          embedding,
+          experienceEmbedding,
+          skillsEmbedding,
+        }
+      );
+    } else {
+      // No file: reuse stored resume data if available
+      resumeText = user?.resumeText;
+      if (!resumeText || !resumeText.trim()) {
+        return res.status(400).json({ success: false, message: "Please upload your resume first" });
       }
-    );
+
+      embedding = Array.isArray(user?.embedding) && user.embedding.length ? user.embedding : await embedText(resumeText);
+      experienceEmbedding = Array.isArray(user?.experienceEmbedding) && user.experienceEmbedding.length
+        ? user.experienceEmbedding
+        : await embedText(`${user?.totalExperience || 0} years experience`);
+      skillsEmbedding = Array.isArray(user?.skillsEmbedding) && user.skillsEmbedding.length
+        ? user.skillsEmbedding
+        : Array.isArray(user?.primarySkills)
+          ? await embedText(user.primarySkills.map((s) => s.skill).filter(Boolean).join(" "))
+          : [];
+    }
 
     const existing = await Application.findOne({ job: jobId, candidate: req.user._id });
     if (existing) return res.status(400).json({ success: false, message: "Already applied" });
 
     const scored = scoreCandidateForJob({
-      ...req.user.toObject(),
+      ...(user?.toObject?.() || {}),
       resumeText,
       embedding,
       experienceEmbedding,
       skillsEmbedding,
-      projectsEmbedding: req.user.projectsEmbedding || [],
+      projectsEmbedding: user?.projectsEmbedding || [],
     }, job.toObject());
 
     const application = await Application.create({
@@ -376,7 +597,10 @@ export default {
   getJobApplicants,
   bulkUpdateApplications,
   closeJob,
+  updateJob,
+  deleteJob,
   getPublicJob,
+  getPublicJobsList,
   applyToJob,
   shortlistResumes,
 };

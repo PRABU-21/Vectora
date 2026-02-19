@@ -12,6 +12,7 @@ const ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs";
 const JOB_API_URL = "https://www.arbeitnow.com/api/job-board-api";
 const LEETCODE_GRAPHQL = "https://leetcode.com/graphql/";
 const LEETCODE_STATS_URL = "https://leetcode-stats-api.herokuapp.com/";
+const LEETCODE_STATS_ALT_URL = "https://alfa-leetcode-api.vercel.app";
 const LEETCODE_TOPICS_FALLBACK = "https://alfa-leetcode-api.vercel.app";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -258,34 +259,96 @@ export const getLeetCodeProfile = async (req, res) => {
     return res.status(400).json({ success: false, message: "Username is required" });
   }
 
+  const normalizeFallbackStats = (payload) => {
+    const data = payload?.data ?? payload;
+
+    if (!data) return null;
+
+    const totalSolved =
+      data.totalSolved ??
+      data.totalSolvedCount ??
+      data.total_solved ??
+      data.solved ??
+      data.solvedCount;
+
+    const totalQuestions =
+      data.totalQuestions ??
+      data.total_questions ??
+      data.totalCount ??
+      data.total ??
+      data.totalProblem;
+
+    const easySolved = data.easySolved ?? data.easy?.solved ?? data.solvedEasy;
+    const mediumSolved =
+      data.mediumSolved ?? data.medium?.solved ?? data.solvedMedium;
+    const hardSolved = data.hardSolved ?? data.hard?.solved ?? data.solvedHard;
+
+    const hasCounts =
+      totalSolved != null ||
+      easySolved != null ||
+      mediumSolved != null ||
+      hardSolved != null;
+
+    const okStatus =
+      data.status === "success" ||
+      payload?.status === "success" ||
+      payload?.success === true ||
+      data.success === true;
+
+    if (!okStatus && !hasCounts) return null;
+
+    const fallbackSolvedSum = [easySolved, mediumSolved, hardSolved]
+      .filter((v) => typeof v === "number" && !Number.isNaN(v))
+      .reduce((sum, v) => sum + v, 0);
+
+    const solvedStats = [
+      { difficulty: "Easy", count: easySolved ?? 0 },
+      { difficulty: "Medium", count: mediumSolved ?? 0 },
+      { difficulty: "Hard", count: hardSolved ?? 0 },
+    ];
+
+    return {
+      success: true,
+      source: payload?.source || payload?.provider || "fallback",
+      username,
+      ranking: data.ranking ?? data.profile?.ranking ?? null,
+      reputation: data.reputation ?? data.profile?.reputation ?? null,
+      starRating: data.starRating ?? data.profile?.starRating ?? null,
+      solvedStats,
+      overall: {
+        solvedCount: totalSolved ?? fallbackSolvedSum ?? 0,
+        totalCount: totalQuestions ?? 0,
+        progress: data.progress || [],
+      },
+      topics: [],
+    };
+  };
+
   const fetchFallbackStats = async () => {
-    try {
-      const fallback = await axios.get(`${LEETCODE_STATS_URL}${encodeURIComponent(username)}`);
-      if (fallback.data && fallback.data.status === "success") {
-        return {
-          success: true,
-          source: "fallback",
-          username,
-          ranking: fallback.data.ranking,
-          reputation: fallback.data.reputation,
-          starRating: null,
-          solvedStats: [
-            { difficulty: "Easy", count: fallback.data.easySolved },
-            { difficulty: "Medium", count: fallback.data.mediumSolved },
-            { difficulty: "Hard", count: fallback.data.hardSolved },
-          ],
-          overall: {
-            solvedCount: fallback.data.totalSolved,
-            totalCount: fallback.data.totalQuestions,
-            progress: [],
-          },
-          topics: [],
-        };
+    // Try multiple community mirrors because they differ in paths/fields.
+    const uname = encodeURIComponent(username);
+    const endpoints = [
+      `${LEETCODE_STATS_ALT_URL}/user/${uname}`,
+      `${LEETCODE_STATS_ALT_URL}/${uname}`,
+      `${LEETCODE_STATS_URL}${uname}`,
+    ];
+
+    for (const url of endpoints) {
+      try {
+        const resp = await axios.get(url, {
+          validateStatus: () => true, // some mirrors return 404/500 with useful bodies
+        });
+
+        const normalized = normalizeFallbackStats(resp.data);
+        if (normalized) {
+          normalized.source = normalized.source || new URL(url).hostname;
+          return normalized;
+        }
+      } catch (err) {
       }
-      return null;
-    } catch (err) {
-      return null;
     }
+
+    return null;
   };
 
   const fetchTopicsFallback = async () => {
@@ -368,7 +431,7 @@ export const getLeetCodeProfile = async (req, res) => {
         return res.json(fallback);
       }
 
-      return res.status(response.status || 502).json({
+      return res.status(200).json({
         success: false,
         message: "LeetCode API did not return a valid response",
         status: response.status,
@@ -383,7 +446,7 @@ export const getLeetCodeProfile = async (req, res) => {
         fallback.topics = await fetchTopicsFallback();
         return res.json(fallback);
       }
-      return res.status(400).json({ success: false, message: msg, errors: response.data.errors });
+      return res.status(200).json({ success: false, message: msg, errors: response.data.errors });
     }
 
     const data = response.data?.data;
@@ -425,7 +488,7 @@ export const getLeetCodeProfile = async (req, res) => {
       return res.json(fallback);
     }
 
-    return res.status(status).json({
+    return res.status(200).json({
       success: false,
       message,
       error: error.message,

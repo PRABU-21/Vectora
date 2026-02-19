@@ -260,6 +260,13 @@ const Profile = () => {
     setLeetcodeError("");
     try {
       const data = await getLeetCodeProfile(username);
+      if (!data?.success) {
+        setLeetcodeData(null);
+        setLeetcodeError(
+          data?.message || "Unable to fetch LeetCode data right now",
+        );
+        return;
+      }
       setLeetcodeData(data);
     } catch (err) {
       setLeetcodeData(null);
@@ -826,7 +833,7 @@ const Profile = () => {
                 Quick Actions
               </h3>
               <div className="space-y-3">
-                <button
+                {/* <button
                   onClick={() => navigate("/resume-builder")}
                   className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white hover:from-indigo-50 hover:to-purple-50 rounded-xl border border-gray-200 hover:border-indigo-300 transition-all group"
                 >
@@ -863,7 +870,7 @@ const Profile = () => {
                       d="M9 5l7 7-7 7"
                     />
                   </svg>
-                </button>
+                </button> */}
 
                 <button
                   onClick={() => navigate("/job-recommendations")}

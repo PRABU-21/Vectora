@@ -1,25 +1,38 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   getJobs,
   getJobRecommendations,
   applyToJob,
   getAppliedJobs,
+  getLiveRecruiterJobs,
 } from "../data/api.js";
 import ParticlesBackground from "../components/ParticlesBackground";
 import GoogleTranslate from "../components/GoogleTranslate";
+import GooeyNav from "../components/GooeyNav";
 
 const JobRecommendations = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobs, setJobs] = useState([]);
+  const [liveJobs, setLiveJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [liveJobsLoading, setLiveJobsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [liveJobsError, setLiveJobsError] = useState(null);
+  const [showLiveJobs, setShowLiveJobs] = useState(false);
   const [isPersonalized, setIsPersonalized] = useState(false);
   const [recommendationMetadata, setRecommendationMetadata] = useState(null);
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [toast, setToast] = useState(null);
+
+  const navItems = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Profile", href: "/profile" },
+  ];
+  const activeNavIndex = navItems.findIndex((item) => location.pathname.startsWith(item.href));
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -88,6 +101,7 @@ const JobRecommendations = () => {
         setJobs(response.recommendations);
         setRecommendationMetadata(response.metadata);
         setIsPersonalized(true);
+        setShowLiveJobs(false);
         setError(null);
       } else {
         throw new Error("Invalid response format");
@@ -135,11 +149,39 @@ const JobRecommendations = () => {
       setJobs(response.jobs);
       setIsPersonalized(false);
       setRecommendationMetadata(null);
+      setShowLiveJobs(false);
     } catch (err) {
       console.error("Error fetching jobs:", err);
       setError("Failed to load jobs. Please try again later.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLiveRecruiterJobs = async () => {
+    try {
+      setLiveJobsLoading(true);
+      setLiveJobsError(null);
+      const response = await getLiveRecruiterJobs();
+      setLiveJobs(response?.jobs || []);
+    } catch (err) {
+      console.error("Error fetching live recruiter jobs:", err);
+      setLiveJobsError("Failed to load live recruiter jobs. Please try again later.");
+    } finally {
+      setLiveJobsLoading(false);
+    }
+  };
+
+  const handleToggleLiveJobs = async () => {
+    const nextValue = !showLiveJobs;
+    setShowLiveJobs(nextValue);
+
+    if (nextValue) {
+      setIsPersonalized(false);
+      setRecommendationMetadata(null);
+      if (liveJobs.length === 0) {
+        await fetchLiveRecruiterJobs();
+      }
     }
   };
 
@@ -218,6 +260,21 @@ const JobRecommendations = () => {
     }
   };
 
+  const handleApplyClick = (e, job) => {
+    if (showLiveJobs) {
+      e.stopPropagation();
+      const jobId = job.id || job._id || job.jobId;
+      if (!jobId) {
+        showToast("Unable to open job details", "error");
+        return;
+      }
+      navigate(`/jobs/${jobId}/apply`);
+      return;
+    }
+
+    handleApplyToJob(e, job);
+  };
+
   const isJobApplied = (jobId) => {
     if (!jobId) return false;
     return appliedJobs.some(
@@ -233,6 +290,11 @@ const JobRecommendations = () => {
       year: "numeric",
     });
   };
+
+  const visibleJobs = showLiveJobs ? liveJobs : jobs;
+  const listLoading = showLiveJobs ? liveJobsLoading : loading;
+  const listError = showLiveJobs ? liveJobsError : error;
+  const visibleJobsCount = visibleJobs?.length || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-sky-50">
@@ -260,7 +322,7 @@ const JobRecommendations = () => {
               </h1>
             </div>
             <div className="flex items-center gap-6">
-              <GoogleTranslate />
+              {/* <GoogleTranslate /> */}
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
                   <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
@@ -271,44 +333,11 @@ const JobRecommendations = () => {
                   </span>
                 </div>
               )}
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="text-gray-700 hover:text-sky-600 font-medium transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                <span className="hidden sm:inline">Dashboard</span>
-              </button>
-              <button
-                onClick={() => navigate("/profile")}
-                className="text-gray-700 hover:text-sky-600 font-medium transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span className="hidden sm:inline">Profile</span>
-              </button>
+              <GooeyNav
+                items={navItems}
+                activeIndex={activeNavIndex >= 0 ? activeNavIndex : 0}
+                onSelect={(_, item) => navigate(item.href)}
+              />
               <button
                 onClick={handleLogout}
                 className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
@@ -346,11 +375,11 @@ const JobRecommendations = () => {
                 : "Job Recommendations"}
             </h1>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
-              {loading
+              {listLoading
                 ? "Loading opportunities..."
                 : isPersonalized
-                  ? `${jobs.length} AI-matched jobs tailored to your unique profile`
-                  : `Explore ${jobs.length} exciting career opportunities`}
+                  ? `${visibleJobsCount} AI-matched jobs tailored to your unique profile`
+                  : `Explore ${visibleJobsCount} exciting career opportunities`}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -469,10 +498,10 @@ const JobRecommendations = () => {
           {/* Left side - Job Recommendations (70%) */}
           <div className="flex-1" style={{ width: "70%" }}>
             <div className="mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    {isPersonalized && (
+                    {isPersonalized && !showLiveJobs && (
                       <svg
                         className="w-7 h-7 text-sky-600"
                         fill="none"
@@ -487,20 +516,38 @@ const JobRecommendations = () => {
                         />
                       </svg>
                     )}
-                    {isPersonalized
-                      ? "Your Top Matches"
-                      : "Available Opportunities"}
+                    {showLiveJobs
+                      ? "Live Recruiter Jobs"
+                      : isPersonalized
+                        ? "Your Top Matches"
+                        : "Available Opportunities"}
                   </h2>
                   <p className="text-gray-600 mt-1">
-                    {isPersonalized
-                      ? "Sorted by relevance to your profile"
-                      : "Browse all available positions"}
+                    {showLiveJobs
+                      ? "Open roles posted directly by recruiters"
+                      : isPersonalized
+                        ? "Sorted by relevance to your profile"
+                        : "Browse all available positions"}
                   </p>
+                </div>
+                <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200">
+                  <span className="text-sm text-gray-700">Live recruiter jobs</span>
+                  <button
+                    type="button"
+                    onClick={handleToggleLiveJobs}
+                    className={`${showLiveJobs ? "bg-sky-600" : "bg-gray-300"} relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200`}
+                    aria-pressed={showLiveJobs}
+                    aria-label="Toggle live recruiter jobs"
+                  >
+                    <span
+                      className={`${showLiveJobs ? "translate-x-5" : "translate-x-1"} inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200`}
+                    ></span>
+                  </button>
                 </div>
               </div>
             </div>
 
-            {error && (
+            {listError && (
               <div className="bg-gradient-to-r from-sky-50 to-indigo-50 border-2 border-sky-200 rounded-2xl p-6 mb-8">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -520,10 +567,12 @@ const JobRecommendations = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-sky-900 text-lg mb-1">
-                      Unable to Load Recommendations
+                      {showLiveJobs
+                        ? "Unable to Load Live Jobs"
+                        : "Unable to Load Recommendations"}
                     </h3>
-                    <p className="text-sky-800 mb-3">{error}</p>
-                    {error.includes("resume") && (
+                    <p className="text-sky-800 mb-3">{listError}</p>
+                    {!showLiveJobs && listError.includes("resume") && (
                       <button
                         onClick={() => navigate("/add-embeddings")}
                         className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md inline-flex items-center gap-2"
@@ -549,21 +598,23 @@ const JobRecommendations = () => {
               </div>
             )}
 
-            {loading ? (
+            {listLoading ? (
               <div className="flex flex-col justify-center items-center h-64">
                 <div className="relative">
                   <div className="animate-spin rounded-full h-16 w-16 border-4 border-sky-200"></div>
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-sky-600 absolute top-0"></div>
                 </div>
                 <p className="mt-4 text-gray-600 font-medium">
-                  Finding perfect matches...
+                  {showLiveJobs
+                    ? "Loading live recruiter jobs..."
+                    : "Finding perfect matches..."}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {jobs.map((job, index) => (
+                {visibleJobs.map((job, index) => (
                   <div
-                    key={job.id || job.jobId}
+                    key={job.id || job._id || job.jobId}
                     className="group bg-white rounded-2xl shadow-md border border-gray-200 hover:shadow-2xl hover:border-sky-300 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden transform hover:-translate-y-1"
                     onClick={() => handleJobClick(job)}
                   >
@@ -613,6 +664,19 @@ const JobRecommendations = () => {
                             </svg>
                             Top #{index + 1}
                           </span>
+                        </div>
+                      )}
+
+                      {showLiveJobs && (
+                        <div className="mb-3 flex items-center flex-wrap gap-2 text-sm">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200">
+                            Live recruiter job
+                          </span>
+                          {job.deadline && (
+                            <span className="text-gray-600">
+                              Deadline: {formatDate(job.deadline)}
+                            </span>
+                          )}
                         </div>
                       )}
 
@@ -689,7 +753,7 @@ const JobRecommendations = () => {
                               d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
-                          {job.salary}
+                              {job.salary || "Not specified"}
                         </p>
                       </div>
 
@@ -721,14 +785,35 @@ const JobRecommendations = () => {
                       </div>
 
                       <button
-                        onClick={(e) => handleApplyToJob(e, job)}
-                        disabled={isJobApplied(job.id || job._id || job.jobId)}
+                        onClick={(e) => handleApplyClick(e, job)}
+                        disabled={
+                          showLiveJobs
+                            ? false
+                            : isJobApplied(job.id || job._id || job.jobId)
+                        }
                         className={`w-full py-3 px-4 rounded-xl font-semibold transition-all shadow-md group-hover:shadow-lg flex items-center justify-center gap-2 ${isJobApplied(job.id || job._id || job.jobId)
                           ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                           : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
                           }`}
                       >
-                        {isJobApplied(job.id) ? (
+                        {showLiveJobs ? (
+                          <>
+                            View & Apply
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </>
+                        ) : isJobApplied(job.id || job._id || job.jobId) ? (
                           <>
                             <svg
                               className="w-4 h-4"
@@ -1106,7 +1191,7 @@ const JobRecommendations = () => {
                         Salary
                       </p>
                       <p className="text-green-700 font-bold text-lg">
-                        {selectedJob.salary}
+                        {selectedJob.salary || "Not specified"}
                       </p>
                     </div>
                   </div>
@@ -1180,20 +1265,41 @@ const JobRecommendations = () => {
                 <div className="flex gap-4">
                   <button
                     onClick={(e) => {
-                      handleApplyToJob(e, selectedJob);
+                      if (showLiveJobs) {
+                        handleApplyClick(e, selectedJob);
+                      } else {
+                        handleApplyToJob(e, selectedJob);
+                      }
                       closeModal();
                     }}
-                    disabled={isJobApplied(
+                    disabled={!showLiveJobs && isJobApplied(
                       selectedJob.id || selectedJob._id || selectedJob.jobId
                     )}
-                    className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 ${isJobApplied(
+                    className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 ${!showLiveJobs && isJobApplied(
                       selectedJob.id || selectedJob._id || selectedJob.jobId
                     )
                       ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                       : "bg-gradient-to-r from-sky-600 to-indigo-700 text-white hover:from-sky-700 hover:to-indigo-800"
                       }`}
                   >
-                    {isJobApplied(selectedJob.id) ? (
+                    {showLiveJobs ? (
+                      <>
+                        View & Apply
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"
+                          />
+                        </svg>
+                      </>
+                    ) : isJobApplied(selectedJob.id || selectedJob._id || selectedJob.jobId) ? (
                       <>
                         <svg
                           className="w-5 h-5"

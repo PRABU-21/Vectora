@@ -45,7 +45,8 @@ app.use("/api/news", newsRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/recruiter", recruiterJobRoutes);
+// Recruiter job management
+app.use("/api/recruiter/jobs", recruiterJobRoutes);
 
 // Database connection
 const connectDB = async () => {

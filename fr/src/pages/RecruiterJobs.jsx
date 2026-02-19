@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   recruiterCreateJob,
   recruiterGetJobs,
   recruiterGetApplicants,
   recruiterCloseJob,
   recruiterBulkUpdate,
+  recruiterUpdateJob,
+  recruiterDeleteJob,
 } from "../data/api";
 import ParticlesBackground from "../components/ParticlesBackground";
 import GoogleTranslate from "../components/GoogleTranslate";
+import GooeyNav from "../components/GooeyNav";
 
 const emptyForm = {
   title: "",
@@ -25,6 +28,7 @@ const emptyForm = {
 
 const RecruiterJobs = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(() => {
     const u = localStorage.getItem("user");
     return u ? JSON.parse(u) : null;
@@ -36,6 +40,15 @@ const RecruiterJobs = () => {
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({ open: false, jobId: null, applicants: [] });
+  const [editModal, setEditModal] = useState({ open: false, job: null, saving: false });
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, job: null, deleting: false });
+
+  const navItems = [
+    { label: "Profile", href: "/recruiter/profile" },
+    { label: "Posted", href: "/recruiter/posted" },
+    { label: "Shortlist", href: "/recruiter/shortlist" },
+  ];
+  const activeNavIndex = navItems.findIndex((item) => location.pathname.startsWith(item.href));
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -75,6 +88,7 @@ const RecruiterJobs = () => {
     try {
       const payload = {
         ...form,
+        company: form.companyName || form.company,
         skills: form.skills
           .split(",")
           .map((s) => s.trim())
@@ -125,14 +139,106 @@ const RecruiterJobs = () => {
     }
   };
 
-  const parsedJobs = useMemo(
-    () =>
-      (jobs || []).map((j) => ({
-        ...j.job,
-        counts: j.counts || { total: 0, pending: 0, selected: 0 },
-      })),
-    [jobs]
-  );
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const openEdit = (job) => {
+    const deadlineValue = (() => {
+      if (!job.deadline) return "";
+      const d = new Date(job.deadline);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toISOString().slice(0, 10);
+    })();
+
+    setEditModal({
+      open: true,
+      saving: false,
+      job: {
+        ...job,
+        companyName: job.companyName || job.company,
+        skillsInput: Array.isArray(job.skills) ? job.skills.join(", ") : job.skills || "",
+        deadline: deadlineValue,
+      },
+    });
+  };
+
+  const handleUpdateJob = async (e) => {
+    e.preventDefault();
+    if (!editModal.job) return;
+    setEditModal((prev) => ({ ...prev, saving: true }));
+    try {
+      const payload = {
+        title: editModal.job.title,
+        company: editModal.job.companyName || editModal.job.company,
+        location: editModal.job.location,
+        description: editModal.job.description,
+        skills: (editModal.job.skillsInput || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        minExperience: editModal.job.minExperience,
+        durationMonths: editModal.job.durationMonths,
+        deadline: editModal.job.deadline,
+        status: editModal.job.status,
+      };
+      await recruiterUpdateJob(editModal.job._id || editModal.job.id, payload);
+      showToast("Job updated");
+      setEditModal({ open: false, job: null, saving: false });
+      loadJobs();
+    } catch (err) {
+      console.error(err);
+      showToast(err.response?.data?.message || "Failed to update job", "error");
+      setEditModal((prev) => ({ ...prev, saving: false }));
+    }
+  };
+
+  const requestDelete = (job) => {
+    setDeleteConfirm({ open: true, job, deleting: false });
+  };
+
+  const handleDeleteJob = async () => {
+    if (!deleteConfirm.job) return;
+    setDeleteConfirm((prev) => ({ ...prev, deleting: true }));
+    try {
+      await recruiterDeleteJob(deleteConfirm.job._id || deleteConfirm.job.id);
+      showToast("Job deleted");
+      setDeleteConfirm({ open: false, job: null, deleting: false });
+      loadJobs();
+    } catch (err) {
+      console.error(err);
+      showToast(err.response?.data?.message || "Failed to delete job", "error");
+      setDeleteConfirm((prev) => ({ ...prev, deleting: false }));
+    }
+  };
+
+  const parsedJobs = useMemo(() => {
+    return (jobs || []).map((j) => {
+      const base = j.job ? { ...j.job, ...j } : { ...j };
+      const counts = {
+        total: base.totalApplications ?? base.counts?.total ?? 0,
+        pending: base.pendingCount ?? base.counts?.pending ?? 0,
+        selected: base.selectedCount ?? base.counts?.selected ?? 0,
+      };
+
+      return {
+        ...base,
+        title: base.title || base.jobRoleName,
+        companyName: base.company || base.companyName,
+        counts,
+      };
+    });
+  }, [jobs]);
+
+  const dashboardStats = useMemo(() => {
+    const totalJobs = parsedJobs.length;
+    const openJobs = parsedJobs.filter((j) => j.status === "open").length;
+    const totalApplicants = parsedJobs.reduce((sum, j) => sum + (j.counts.total || 0), 0);
+    return { totalJobs, openJobs, totalApplicants };
+  }, [parsedJobs]);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -157,12 +263,11 @@ const RecruiterJobs = () => {
             </div>
             <div className="flex items-center gap-6">
               <GoogleTranslate />
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="text-gray-700 hover:text-sky-700 font-medium transition-colors"
-              >
-                Dashboard
-              </button>
+              <GooeyNav
+                items={navItems}
+                activeIndex={activeNavIndex >= 0 ? activeNavIndex : 0}
+                onSelect={(_, item) => navigate(item.href)}
+              />
               <button
                 onClick={logout}
                 className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition-all shadow-md"
@@ -197,164 +302,277 @@ const RecruiterJobs = () => {
           </div>
         )}
 
-        <section className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Create job</h3>
-          {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
-            <input
-              required
-              className="border rounded-lg px-3 py-2"
-              placeholder="Job title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-            <input
-              required
-              className="border rounded-lg px-3 py-2"
-              placeholder="Company"
-              value={form.companyName}
-              onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-            />
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="Location"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-            />
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="Type (e.g., Full-time)"
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-            />
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="Salary"
-              value={form.salary}
-              onChange={(e) => setForm({ ...form, salary: e.target.value })}
-            />
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="Skills (comma separated)"
-              value={form.skills}
-              onChange={(e) => setForm({ ...form, skills: e.target.value })}
-            />
-            <input
-              type="number"
-              min="0"
-              className="border rounded-lg px-3 py-2"
-              placeholder="Min experience (years)"
-              value={form.minExperience}
-              onChange={(e) => setForm({ ...form, minExperience: e.target.value })}
-            />
-            <input
-              type="number"
-              min="0"
-              className="border rounded-lg px-3 py-2"
-              placeholder="Duration months (optional)"
-              value={form.durationMonths}
-              onChange={(e) => setForm({ ...form, durationMonths: e.target.value })}
-            />
-            <input
-              type="date"
-              className="border rounded-lg px-3 py-2"
-              placeholder="Deadline"
-              value={form.deadline}
-              onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-            />
-            <div className="md:col-span-2">
-              <textarea
-                required
-                rows={4}
-                className="border rounded-lg px-3 py-2 w-full"
-                placeholder="Description"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-            </div>
-            <div className="md:col-span-2 flex justify-end gap-3">
-              <button
-                type="submit"
-                disabled={saving}
-                className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition disabled:opacity-60"
-              >
-                {saving ? "Saving..." : "Create job"}
-              </button>
-            </div>
-          </form>
-        </section>
+        <section className="grid lg:grid-cols-3 gap-6">
+          
 
-        <section className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">My jobs</h3>
-            <button
-              className="text-sm text-sky-700 hover:text-sky-800"
-              onClick={loadJobs}
-            >
-              Refresh
-            </button>
-          </div>
-          {loading ? (
-            <div className="text-gray-600">Loading...</div>
-          ) : parsedJobs.length === 0 ? (
-            <div className="text-gray-600">No jobs yet.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-left">
-                  <tr>
-                    <th className="px-4 py-2">Title</th>
-                    <th className="px-4 py-2">Company</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Deadline</th>
-                    <th className="px-4 py-2">Apps</th>
-                    <th className="px-4 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedJobs.map((job) => (
-                    <tr key={job._id} className="border-t">
-                      <td className="px-4 py-2 font-medium text-gray-900">{job.title || job.jobRoleName}</td>
-                      <td className="px-4 py-2 text-gray-700">{job.companyName}</td>
-                      <td className="px-4 py-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          job.status === "open"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-200 text-gray-700"
-                        }`}>
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-gray-700">
-                        {job.deadline ? new Date(job.deadline).toLocaleDateString() : "-"}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700">
-                        {job.counts.total || 0} (pending {job.counts.pending || 0})
-                      </td>
-                      <td className="px-4 py-2 flex gap-2 flex-wrap">
-                        <button
-                          className="text-sky-700 hover:text-sky-900"
-                          onClick={() => openApplicants(job._id)}
-                        >
-                          Applicants
-                        </button>
-                        {job.status === "open" && (
-                          <button
-                            className="text-orange-700 hover:text-orange-900"
-                            onClick={() => handleCloseJob(job._id)}
-                          >
-                            Close
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="lg:col-span-2 bg-white border border-gray-100 shadow-lg rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Create a new role</h3>
+                <p className="text-gray-500 text-sm">Add a role and instantly share it with candidates.</p>
+              </div>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-100">Semantic matching enabled</span>
             </div>
-          )}
+            {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Job title
+                <input
+                  required
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="Senior Frontend Engineer"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Company
+                <input
+                  required
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="Vectora Labs"
+                  value={form.companyName}
+                  onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Location
+                <input
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="Remote"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Type
+                <input
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="Full-time"
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Salary
+                <input
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="Not specified"
+                  value={form.salary}
+                  onChange={(e) => setForm({ ...form, salary: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Skills (comma separated)
+                <input
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="React, Node.js, AWS"
+                  value={form.skills}
+                  onChange={(e) => setForm({ ...form, skills: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Min experience (years)
+                <input
+                  type="number"
+                  min="0"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="0"
+                  value={form.minExperience}
+                  onChange={(e) => setForm({ ...form, minExperience: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Duration months (optional)
+                <input
+                  type="number"
+                  min="0"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="2"
+                  value={form.durationMonths}
+                  onChange={(e) => setForm({ ...form, durationMonths: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Deadline
+                <input
+                  type="date"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  value={form.deadline}
+                  onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                />
+              </label>
+              <label className="md:col-span-2 flex flex-col text-sm font-medium text-gray-700 gap-1">
+                Description
+                <textarea
+                  required
+                  rows={4}
+                  className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="What will this role own?"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+              </label>
+              <div className="md:col-span-2 flex justify-end gap-3">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 transition disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Create job"}
+                </button>
+              </div>
+            </form>
+          </div>
         </section>
       </main>
+
+      {editModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900">Edit role</h4>
+                <p className="text-sm text-gray-500">Update details and save to refresh embeddings.</p>
+              </div>
+              <button
+                className="text-gray-500 hover:text-gray-800"
+                onClick={() => setEditModal({ open: false, job: null, saving: false })}
+              >
+                ✕
+              </button>
+            </div>
+            {editModal.job && (
+              <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleUpdateJob}>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                  Job title
+                  <input
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.title}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, title: e.target.value } }))}
+                  />
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                  Company
+                  <input
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.companyName}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, companyName: e.target.value } }))}
+                  />
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                  Location
+                  <input
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.location}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, location: e.target.value } }))}
+                  />
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                  Deadline
+                  <input
+                    type="date"
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.deadline || ""}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, deadline: e.target.value } }))}
+                  />
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                  Min experience (years)
+                  <input
+                    type="number"
+                    min="0"
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.minExperience}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, minExperience: e.target.value } }))}
+                  />
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                  Duration months
+                  <input
+                    type="number"
+                    min="1"
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.durationMonths}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, durationMonths: e.target.value } }))}
+                  />
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1">
+                  Status
+                  <select
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.status}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, status: e.target.value } }))}
+                  >
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                    <option value="filled">Filled</option>
+                  </select>
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1 md:col-span-2">
+                  Skills (comma separated)
+                  <input
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.skillsInput || ""}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, skillsInput: e.target.value } }))}
+                  />
+                </label>
+                <label className="flex flex-col text-sm font-medium text-gray-700 gap-1 md:col-span-2">
+                  Description
+                  <textarea
+                    rows={4}
+                    className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    value={editModal.job.description}
+                    onChange={(e) => setEditModal((prev) => ({ ...prev, job: { ...prev.job, description: e.target.value } }))}
+                  />
+                </label>
+                <div className="md:col-span-2 flex justify-end gap-3 mt-2">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                    onClick={() => setEditModal({ open: false, job: null, saving: false })}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editModal.saving}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-sky-600 to-indigo-700 text-white font-semibold shadow hover:from-sky-700 hover:to-indigo-800 disabled:opacity-60"
+                  >
+                    {editModal.saving ? "Saving..." : "Save changes"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h4 className="text-lg font-semibold text-gray-900">Delete this role?</h4>
+            <p className="text-sm text-gray-600">
+              This will remove the role and its applications. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                onClick={() => setDeleteConfirm({ open: false, job: null, deleting: false })}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold shadow hover:bg-red-700 disabled:opacity-60"
+                onClick={handleDeleteJob}
+                disabled={deleteConfirm.deleting}
+              >
+                {deleteConfirm.deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
