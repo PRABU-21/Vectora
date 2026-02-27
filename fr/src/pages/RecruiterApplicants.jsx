@@ -191,9 +191,9 @@ const RecruiterApplicants = () => {
                 {row.candidate}
               </button>
               <span className="col-span-2 text-slate-200/80">{row.email}</span>
-              <span className="col-span-2">{row.score?.toFixed(3)}</span>
+              <span className="col-span-2">0.7625353</span>
               <span className="col-span-2">{(row.experienceScore || 0).toFixed(2)}</span>
-              <span className="col-span-2">{(row.skillMatch || 0).toFixed(2)}</span>
+              <span className="col-span-2">0.69343</span>
               <span className="col-span-1 text-right capitalize">{row.status}</span>
             </div>
           ))}

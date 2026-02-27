@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "1h",
   });
 };
 

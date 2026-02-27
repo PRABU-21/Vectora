@@ -102,7 +102,7 @@ const Dashboard = () => {
               </h1>
             </div>
             <div className="flex items-center gap-6">
-              {/* <GoogleTranslate /> */}
+               <GoogleTranslate /> 
               {user && (
                 <div className="hidden md:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full">
                   <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
@@ -415,7 +415,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
+             <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
               <div className="relative p-6">
                 <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-indigo-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -459,9 +459,9 @@ const Dashboard = () => {
                   </svg>
                 </button>
               </div>
-            </div> */}
+            </div> 
 
-            {/* <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-cyan-200 transform hover:-translate-y-1">
+             <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-cyan-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
               <div className="relative p-6">
                 <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -506,7 +506,7 @@ const Dashboard = () => {
                   </svg>
                 </button>
               </div>
-            </div> */}
+            </div> 
 
             <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-green-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
@@ -555,7 +555,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
+             <div className="group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
               <div className="relative p-6">
                 <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -594,7 +594,7 @@ const Dashboard = () => {
                   </svg>
                 </button>
               </div>
-            </div> */}
+            </div> 
           </div>
         )}
 

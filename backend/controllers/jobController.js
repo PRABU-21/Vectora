@@ -10,7 +10,7 @@ import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 
 const ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs";
 const JOB_API_URL = "https://www.arbeitnow.com/api/job-board-api";
-const LEETCODE_GRAPHQL = "https://leetcode.com/graphql/";
+const LEETCODE_GRAPHQL = "https://leetcode.com/graphql";
 const LEETCODE_STATS_URL = "https://leetcode-stats-api.herokuapp.com/";
 const LEETCODE_STATS_ALT_URL = "https://alfa-leetcode-api.vercel.app";
 const LEETCODE_TOPICS_FALLBACK = "https://alfa-leetcode-api.vercel.app";
@@ -384,26 +384,29 @@ export const getLeetCodeProfile = async (req, res) => {
                 reputation
                 starRating
               }
-              submitStatsGlobal {
+              submitStats {
                 acSubmissionNum {
                   difficulty
                   count
                 }
               }
-            }
-            userProfileUserQuestionProgressV2(userSlug: $username) {
-              solvedCount
-              totalCount
-              progress {
-                difficulty
-                solved
-                total
+              languageProblemCount {
+                languageName
+                problemsSolved
               }
-            }
-            userProblemSolvedTopics(username: $username) {
-              topics {
-                name
-                solved
+              tagProblemCounts {
+                advanced {
+                  tagName
+                  problemsSolved
+                }
+                intermediate {
+                  tagName
+                  problemsSolved
+                }
+                fundamental {
+                  tagName
+                  problemsSolved
+                }
               }
             }
           }
@@ -424,7 +427,21 @@ export const getLeetCodeProfile = async (req, res) => {
       }
     );
 
-    if (response.status !== 200 || !response.data) {
+    const payload = response?.data;
+
+    if (payload?.data?.matchedUser) {
+      // Normal success path even if status is not 200 (LeetCode sometimes returns 4xx with data)
+    } else if (payload?.errors?.length) {
+      const msg = payload.errors[0]?.message || "LeetCode returned an error";
+      const fallback = await fetchFallbackStats();
+      if (fallback) {
+        fallback.topics = await fetchTopicsFallback();
+        return res.json(fallback);
+      }
+      return res
+        .status(200)
+        .json({ success: false, message: msg, errors: payload.errors, status: response?.status });
+    } else if (!payload || response?.status >= 400) {
       const fallback = await fetchFallbackStats();
       if (fallback) {
         fallback.topics = await fetchTopicsFallback();
@@ -434,30 +451,32 @@ export const getLeetCodeProfile = async (req, res) => {
       return res.status(200).json({
         success: false,
         message: "LeetCode API did not return a valid response",
-        status: response.status,
-        body: response.data,
+        status: response?.status,
+        body: payload,
       });
     }
 
-    if (response.data?.errors?.length) {
-      const msg = response.data.errors[0]?.message || "LeetCode returned an error";
-      const fallback = await fetchFallbackStats();
-      if (fallback) {
-        fallback.topics = await fetchTopicsFallback();
-        return res.json(fallback);
-      }
-      return res.status(200).json({ success: false, message: msg, errors: response.data.errors });
-    }
-
-    const data = response.data?.data;
+    const data = payload?.data;
 
     if (!data?.matchedUser) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    const acSubmissionNum = data.matchedUser?.submitStatsGlobal?.acSubmissionNum || [];
-    const progress = data.userProfileUserQuestionProgressV2 || {};
-    let topics = data.userProblemSolvedTopics?.topics || [];
+    const acSubmissionNum = data.matchedUser?.submitStats?.acSubmissionNum || [];
+    const solvedCountFromSubmissions = acSubmissionNum.reduce(
+      (sum, s) => sum + (s.count || 0),
+      0
+    );
+
+    // Build topics list from tagProblemCounts; fallback to API if empty
+    const tagCounts = data.matchedUser?.tagProblemCounts || {};
+    let topics = [
+      ...(tagCounts.fundamental || []),
+      ...(tagCounts.intermediate || []),
+      ...(tagCounts.advanced || []),
+    ]
+      .filter((t) => t?.tagName && t?.problemsSolved != null)
+      .map((t) => ({ name: t.tagName, solved: t.problemsSolved }));
 
     if (!topics.length) {
       topics = await fetchTopicsFallback();
@@ -471,11 +490,12 @@ export const getLeetCodeProfile = async (req, res) => {
       starRating: data.matchedUser.profile?.starRating,
       solvedStats: acSubmissionNum,
       overall: {
-        solvedCount: progress.solvedCount,
-        totalCount: progress.totalCount,
-        progress: progress.progress || [],
+        solvedCount: solvedCountFromSubmissions,
+        totalCount: null,
+        progress: [],
       },
       topics,
+      languages: data.matchedUser.languageProblemCount || [],
     });
   } catch (error) {
     console.error("LeetCode fetch error:", error.message);

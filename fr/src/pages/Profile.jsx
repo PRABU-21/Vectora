@@ -138,6 +138,7 @@ const Profile = () => {
   const [leetcodeData, setLeetcodeData] = useState(null);
   const [leetcodeLoading, setLeetcodeLoading] = useState(false);
   const [leetcodeError, setLeetcodeError] = useState("");
+  const [leetcodeAutoFetched, setLeetcodeAutoFetched] = useState(false);
   const personalInfoRef = useRef(null);
 
   const [editableProfile, setEditableProfile] = useState({
@@ -249,9 +250,16 @@ const Profile = () => {
     }
   }, [parsedProfile, leetcodeUsername]);
 
-  const handleLeetcodeFetch = async () => {
-    const username = leetcodeUsername.trim();
-    if (!username) {
+  // Auto-fetch LeetCode stats once after parsing when a handle is detected
+  useEffect(() => {
+    if (parsedProfile && leetcodeUsername && !leetcodeAutoFetched) {
+      fetchLeetcodeProfile(leetcodeUsername, { markAuto: true });
+    }
+  }, [parsedProfile, leetcodeUsername, leetcodeAutoFetched]);
+
+  const fetchLeetcodeProfile = async (username, { markAuto = false } = {}) => {
+    const normalized = (username || "").trim();
+    if (!normalized) {
       setLeetcodeError("Enter a LeetCode username");
       return;
     }
@@ -259,7 +267,7 @@ const Profile = () => {
     setLeetcodeLoading(true);
     setLeetcodeError("");
     try {
-      const data = await getLeetCodeProfile(username);
+      const data = await getLeetCodeProfile(normalized);
       if (!data?.success) {
         setLeetcodeData(null);
         setLeetcodeError(
@@ -268,6 +276,7 @@ const Profile = () => {
         return;
       }
       setLeetcodeData(data);
+      if (markAuto) setLeetcodeAutoFetched(true);
     } catch (err) {
       setLeetcodeData(null);
       setLeetcodeError(
@@ -278,6 +287,11 @@ const Profile = () => {
     } finally {
       setLeetcodeLoading(false);
     }
+  };
+
+  const handleLeetcodeFetch = async () => {
+    setLeetcodeAutoFetched(false);
+    await fetchLeetcodeProfile(leetcodeUsername);
   };
 
   const handleFileUpload = async (e) => {
@@ -332,6 +346,8 @@ const Profile = () => {
     if (detected) {
       setLeetcodeUsername(detected);
       setLeetcodeData(null);
+      setLeetcodeAutoFetched(false);
+      fetchLeetcodeProfile(detected, { markAuto: true });
     }
     requestAnimationFrame(() => {
       personalInfoRef.current?.scrollIntoView({

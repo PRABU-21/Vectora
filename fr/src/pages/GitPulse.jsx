@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
     LineChart,
@@ -44,6 +45,10 @@ const GitPulse = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
     const [githubData, setGithubData] = useState(null);
+    const [leetUsername, setLeetUsername] = useState("");
+    const [leetData, setLeetData] = useState(null);
+    const [leetError, setLeetError] = useState("");
+    const [leetLoading, setLeetLoading] = useState(false);
 
     useEffect(() => {
         const initializeDashboard = async () => {
@@ -101,6 +106,35 @@ const GitPulse = () => {
 
         initializeDashboard();
     }, [searchParams]);
+
+    const handleFetchLeetCode = async () => {
+        const username = leetUsername.trim();
+        if (!username) {
+            setLeetError("Enter a LeetCode username");
+            setLeetData(null);
+            return;
+        }
+        setLeetLoading(true);
+        setLeetError("");
+        try {
+            const res = await axios.get(
+                `http://localhost:5000/api/jobs/leetcode/${encodeURIComponent(username)}`
+            );
+            if (!res.data?.success) {
+                setLeetData(null);
+                setLeetError(res.data?.message || "Unable to fetch LeetCode data");
+                return;
+            }
+            setLeetData(res.data);
+        } catch (err) {
+            setLeetData(null);
+            setLeetError(
+                err?.response?.data?.message || err?.message || "User not found or API error"
+            );
+        } finally {
+            setLeetLoading(false);
+        }
+    };
 
     const handleConnect = async () => {
         try {
@@ -684,6 +718,81 @@ const GitPulse = () => {
 
                         {/* Activity Breakdown - Full Width */}
                         <ActivityBreakdown data={activityTimeline} />
+
+                        {/* LeetCode Profile Fetcher */}
+                        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 shadow-sm">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-base font-bold text-white">LeetCode Profile</h3>
+                                <span className="text-xs text-gray-500">Beta</span>
+                            </div>
+                            <div className="flex flex-col md:flex-row gap-3 mb-3">
+                                <input
+                                    value={leetUsername}
+                                    onChange={(e) => setLeetUsername(e.target.value)}
+                                    placeholder="Enter LeetCode username"
+                                    className="flex-1 rounded-lg bg-[#0d1117] border border-gray-800 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                />
+                                <button
+                                    onClick={handleFetchLeetCode}
+                                    disabled={leetLoading}
+                                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-60"
+                                >
+                                    {leetLoading ? "Fetching..." : "Fetch"}
+                                </button>
+                            </div>
+                            {leetError && (
+                                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mb-3">
+                                    {leetError}
+                                </div>
+                            )}
+
+                            {leetData && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-200">
+                                    <div className="p-3 rounded-lg bg-[#0d1117] border border-gray-800">
+                                        <p className="text-gray-500 text-xs">Username</p>
+                                        <p className="font-semibold text-white">{leetData.username}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-[#0d1117] border border-gray-800">
+                                        <p className="text-gray-500 text-xs">Ranking</p>
+                                        <p className="font-semibold text-white">{leetData.ranking ?? "-"}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-[#0d1117] border border-gray-800">
+                                        <p className="text-gray-500 text-xs">Reputation</p>
+                                        <p className="font-semibold text-white">{leetData.reputation ?? "-"}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-[#0d1117] border border-gray-800">
+                                        <p className="text-gray-500 text-xs">Star Rating</p>
+                                        <p className="font-semibold text-white">{leetData.starRating ?? "-"}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-[#0d1117] border border-gray-800 col-span-2 md:col-span-4">
+                                        <p className="text-gray-500 text-xs mb-2">Solved by Difficulty</p>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {(leetData.solvedStats || []).map((stat) => (
+                                                <div key={stat.difficulty} className="p-3 rounded-lg bg-[#161b22] border border-gray-800 text-center">
+                                                    <p className="text-xs text-gray-500">{stat.difficulty}</p>
+                                                    <p className="text-lg font-semibold text-white">{stat.count}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {leetData.topics?.length > 0 && (
+                                        <div className="p-3 rounded-lg bg-[#0d1117] border border-gray-800 col-span-2 md:col-span-4">
+                                            <p className="text-gray-500 text-xs mb-2">Top Topics</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {leetData.topics
+                                                    .sort((a, b) => (b.solved || 0) - (a.solved || 0))
+                                                    .slice(0, 8)
+                                                    .map((topic) => (
+                                                        <span key={topic.name} className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-xs border border-emerald-500/30">
+                                                            {topic.name} – {topic.solved}
+                                                        </span>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 

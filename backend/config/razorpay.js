@@ -1,8 +1,13 @@
 import Razorpay from "razorpay";
 
-const keyId = process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder";
-const keySecret = process.env.RAZORPAY_KEY_SECRET || "test_secret_placeholder";
+const keyId = process.env.RAZORPAY_KEY_ID;
+const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
+if (!keyId || !keySecret) {
+  throw new Error("Missing Razorpay credentials: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET");
+}
+
+// Single shared Razorpay client
 const razorpay = new Razorpay({
   key_id: keyId,
   key_secret: keySecret,
