@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vectora-frontend
+  namespace: vectora
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vectora-frontend
+  template:
+    metadata:
+      labels:
+        app: vectora-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: deepan0202/vectora-frontend:v1
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vectora-frontend
+  namespace: vectora
+spec:
+  type: LoadBalancer
+  selector:
+    app: vectora-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

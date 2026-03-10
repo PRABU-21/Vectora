@@ -1,0 +1,13 @@
+cd frontend
+docker build -t vectora-fr .
+♻️ 6️⃣ Restart Frontend Container
+
+Stop old one:
+
+docker stop vectora-frontend
+docker rm vectora-frontend
+
+
+Run new:
+
+docker run -d --name vectora-frontend --network vectora-net -p 3000:80 vectora-fr

@@ -41,6 +41,11 @@ app.use("/api/freelancers", freelancerRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/resume", resumeRoutes);
 
+// Lightweight health check endpoint for uptime probes
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 // Database connection
 const connectDB = async () => {
   try {
@@ -51,6 +56,10 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
+
 
 connectDB();
 
