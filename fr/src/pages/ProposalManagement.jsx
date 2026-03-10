@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   getMyProposals,
@@ -28,7 +28,7 @@ const ProposalManagement = () => {
       return;
     }
     fetchProposals();
-  }, [activeTab, selectedProjectId]);
+  }, [fetchProposals, navigate]);
 
   useEffect(() => {
     const loadMyProjects = async () => {
@@ -46,9 +46,9 @@ const ProposalManagement = () => {
     if (activeTab === 'my-projects') {
       loadMyProjects();
     }
-  }, [activeTab]);
+  }, [activeTab, selectedProjectId]);
 
-  const fetchProposals = async () => {
+  const fetchProposals = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -65,7 +65,7 @@ const ProposalManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, selectedProjectId]);
 
   const handleStatusUpdate = async (proposalId, newStatus) => {
     try {
@@ -253,7 +253,6 @@ const ProposalManagement = () => {
                   <div key={proposal._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white">
                     {(() => {
                       const hasOwnerAccepted = [SUBMISSION_STATUSES.ACCEPTED, SUBMISSION_STATUSES.IN_PROGRESS, SUBMISSION_STATUSES.NEEDS_UPDATES, SUBMISSION_STATUSES.SUBMITTED_WORK, SUBMISSION_STATUSES.COMPLETED].includes(proposal.status);
-                      const projectStatus = proposal.projectId?.status || proposal.projectStatus || (hasOwnerAccepted ? PROJECT_STATUSES.IN_PROGRESS : PROJECT_STATUSES.OPEN);
                       const displayStatus = proposal.status === SUBMISSION_STATUSES.COMPLETED ? PROJECT_STATUSES.COMPLETED : hasOwnerAccepted ? PROJECT_STATUSES.IN_PROGRESS : 'Awaiting Approval';
                       const badgeColor = displayStatus === PROJECT_STATUSES.IN_PROGRESS || displayStatus === PROJECT_STATUSES.COMPLETED
                         ? getProjectStatusColor(displayStatus)

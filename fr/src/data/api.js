@@ -1,6 +1,12 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
+// Prefer env override; otherwise default to same-host ingress at /api
+const API_URL =
+  (import.meta?.env?.VITE_API_URL && import.meta.env.VITE_API_URL.trim()) ||
+  (typeof window !== "undefined" ? `${window.location.origin}/api` : "/api");
+
+// Export API_BASE_URL for use in other components
+export const API_BASE_URL = API_URL;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -19,6 +25,19 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  },
+);
+
+// Auto-logout on 401 to prevent stale/invalid tokens lingering
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location = "/login";
+    }
     return Promise.reject(error);
   }
 );
@@ -43,6 +62,21 @@ export const uploadEmbedding = async (fileData) => {
     {
       headers: {
         "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  return response.data;
+};
+
+export const generateProfileEmbedding = async (text) => {
+  const token = localStorage.getItem("token");
+  const response = await axios.post(
+    `${API_URL}/embeddings/generate-profile`,
+    { text },
+    {
+      headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     }
@@ -76,7 +110,9 @@ export const getAppliedJobs = async () => {
 
 // LeetCode profile stats
 export const getLeetCodeProfile = async (username) => {
-  const response = await api.get(`/jobs/leetcode/${encodeURIComponent(username)}`);
+  const response = await api.get(
+    `/jobs/leetcode/${encodeURIComponent(username)}`,
+  );
   return response.data;
 };
 
@@ -98,6 +134,50 @@ export const saveParsedProfile = async (profile) => {
 
 export const getParsedProfile = async () => {
   const response = await api.get("/resume/profile");
+  return response.data;
+};
+
+// Recruiter job APIs
+export const recruiterCreateJob = async (payload) => {
+  const response = await api.post("/recruiter/jobs", payload);
+  return response.data;
+};
+
+export const recruiterGetJobs = async () => {
+  const response = await api.get("/recruiter/jobs");
+  return response.data?.jobs || [];
+};
+
+export const recruiterGetApplicants = async (jobId) => {
+  const response = await api.get(`/recruiter/jobs/${jobId}/applicants`);
+  return response.data;
+};
+
+export const recruiterBulkUpdate = async (jobId, body) => {
+  const response = await api.post(`/recruiter/jobs/${jobId}/bulk-update`, body);
+  return response.data;
+};
+
+export const recruiterCloseJob = async (jobId) => {
+  const response = await api.patch(`/recruiter/jobs/${jobId}/close`);
+  return response.data;
+};
+
+export const recruiterShortlist = async (body) => {
+  const response = await api.post(`/recruiter/jobs/shortlist`, body);
+  return response.data;
+};
+
+export const getPublicJob = async (jobId) => {
+  const response = await api.get(`/recruiter/jobs/${jobId}/public`);
+  return response.data;
+};
+
+// Chat assistant
+export const sendChatMessage = async ({ message, jobId }) => {
+  const payload = { message };
+  if (jobId) payload.jobId = jobId;
+  const response = await api.post("/chat", payload);
   return response.data;
 };
 
@@ -150,8 +230,22 @@ export const updateProposalStatus = async (proposalId, payload) => {
 };
 
 export const submitProposalWork = async (proposalId, payload) => {
-  const response = await api.put(`/proposals/${proposalId}/submit-work`, payload);
+  const response = await api.put(
+    `/proposals/${proposalId}/submit-work`,
+    payload,
+  );
   return response.data?.data || response.data;
+};
+
+// Payments API calls
+export const createPaymentOrder = async (proposalId, amount) => {
+  const response = await api.post(`/payments/order`, { proposalId, amount });
+  return response.data;
+};
+
+export const verifyPayment = async (payload) => {
+  const response = await api.post(`/payments/verify`, payload);
+  return response.data;
 };
 
 // Freelancer profile API calls

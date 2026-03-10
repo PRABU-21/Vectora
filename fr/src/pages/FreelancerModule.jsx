@@ -1,23 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import ProjectForm from '../components/ProjectForm';
-import ProjectList from '../components/ProjectList';
-import ProjectDetail from '../components/ProjectDetail';
-import { 
-  getProjects, 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import ProjectForm from "../components/ProjectForm";
+import ProjectList from "../components/ProjectList";
+import ProjectDetail from "../components/ProjectDetail";
+import GoogleTranslate from "../components/GoogleTranslate";
+import {
+  getProjects,
   createProject,
   updateProject,
   getMyProjects,
   getMyProposals,
   createProposal,
   getMyActiveProjects,
-  submitProposalWork
-} from '../data/api';
-import { PROJECT_STATUSES, SUBMISSION_STATUSES, getStatusColor } from '../utils/statusUtils';
+  submitProposalWork,
+} from "../data/api";
+import {
+  PROJECT_STATUSES,
+  SUBMISSION_STATUSES,
+  getStatusColor,
+} from "../utils/statusUtils";
 
 const FreelancerModule = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('post-project');
+  const [activeTab, setActiveTab] = useState("post-project");
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,57 +32,57 @@ const FreelancerModule = () => {
   const [deliverySubmitting, setDeliverySubmitting] = useState({});
   const [deliveryErrors, setDeliveryErrors] = useState({});
   const [deliveryAcknowledged, setDeliveryAcknowledged] = useState({});
-  
+
   // Sample proposals data for demonstration (removed — using live API)
-  
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     setError(null);
-    
-    if (activeTab === 'my-proposals') {
+
+    if (activeTab === "my-proposals") {
       fetchMyProposals();
     } else {
       fetchProjects();
     }
   }, [activeTab]);
-  
+
   const fetchMyProposals = async () => {
     try {
       setLoading(true);
       const response = await getMyProposals();
       setProposals(response);
     } catch (error) {
-      setError('Failed to fetch proposals');
-      console.error('Error fetching proposals:', error);
+      setError("Failed to fetch proposals");
+      console.error("Error fetching proposals:", error);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const fetchProjects = async () => {
     try {
       setLoading(true);
       let response;
-      if (activeTab === 'in-progress') {
+      if (activeTab === "in-progress") {
         response = await getMyActiveProjects();
-      } else if (activeTab === 'my-projects') {
+      } else if (activeTab === "my-projects") {
         response = await getMyProjects();
       } else {
         // Exclude my own posted projects from the public list
-        response = await getProjects('excludeMine=true');
+        response = await getProjects("excludeMine=true");
       }
       setProjects(response || []);
     } catch (error) {
-      if (activeTab === 'my-projects' || activeTab === 'in-progress') {
+      if (activeTab === "my-projects" || activeTab === "in-progress") {
         setProjects([]);
       }
       const backendMessage = error?.response?.data?.message;
-      setError(backendMessage || 'Failed to fetch projects');
-      console.error('Error fetching projects:', error?.response?.data || error);
+      setError(backendMessage || "Failed to fetch projects");
+      console.error("Error fetching projects:", error?.response?.data || error);
     } finally {
       setLoading(false);
     }
@@ -87,11 +92,11 @@ const FreelancerModule = () => {
     try {
       const response = await createProject(projectData);
       setProjects([response, ...projects]);
-      setActiveTab('view-projects');
+      setActiveTab("view-projects");
     } catch (error) {
       const backendMessage = error?.response?.data?.message;
-      setError(backendMessage || 'Failed to create project');
-      console.error('Error creating project:', error?.response?.data || error);
+      setError(backendMessage || "Failed to create project");
+      console.error("Error creating project:", error?.response?.data || error);
     }
   };
 
@@ -99,12 +104,16 @@ const FreelancerModule = () => {
     try {
       // Update project status via API
       const updatedProject = await updateProject(id, { status: newStatus });
-      setProjects(projects.map(project => 
-        (project._id || project.id) === id ? { ...project, status: newStatus } : project
-      ));
+      setProjects(
+        projects.map((project) =>
+          (project._id || project.id) === id
+            ? { ...project, status: newStatus }
+            : project,
+        ),
+      );
     } catch (error) {
-      setError('Failed to update project status');
-      console.error('Error updating project status:', error);
+      setError("Failed to update project status");
+      console.error("Error updating project status:", error);
     }
   };
 
@@ -118,9 +127,10 @@ const FreelancerModule = () => {
 
   const handleApply = async (proposalData) => {
     try {
-      const projectId = proposalData.projectId || selectedProject?._id || selectedProject?.id;
+      const projectId =
+        proposalData.projectId || selectedProject?._id || selectedProject?.id;
       if (!projectId) {
-        setError('Missing project id for proposal');
+        setError("Missing project id for proposal");
         return;
       }
 
@@ -128,23 +138,26 @@ const FreelancerModule = () => {
         projectId,
         expectedCost: Number(proposalData.expectedCost),
         expectedDelivery: Number(proposalData.expectedDelivery),
-        description: proposalData.proposalText || proposalData.description || '',
-        portfolioLink: proposalData.portfolioLink || ''
+        description:
+          proposalData.proposalText || proposalData.description || "",
+        portfolioLink: proposalData.portfolioLink || "",
       });
 
       setProposals([response, ...proposals]);
-      setProjects(projects.map(project =>
-        (project._id || project.id) === projectId
-          ? { ...project, applicants: (project.applicants ?? 0) + 1 }
-          : project
-      ));
+      setProjects(
+        projects.map((project) =>
+          (project._id || project.id) === projectId
+            ? { ...project, applicants: (project.applicants ?? 0) + 1 }
+            : project,
+        ),
+      );
       setSelectedProject(null);
-      setActiveTab('my-proposals');
+      setActiveTab("my-proposals");
       await fetchMyProposals();
     } catch (err) {
       const backendMessage = err?.response?.data?.message;
-      setError(backendMessage || 'Failed to submit proposal');
-      console.error('Error applying to project:', err?.response?.data || err);
+      setError(backendMessage || "Failed to submit proposal");
+      console.error("Error applying to project:", err?.response?.data || err);
     }
   };
 
@@ -154,18 +167,19 @@ const FreelancerModule = () => {
     console.log(`Updated proposal ${proposalId} to ${newStatus}`);
   };
 
-  const eligibleForDelivery = (status) => [
-    SUBMISSION_STATUSES.ACCEPTED,
-    SUBMISSION_STATUSES.IN_PROGRESS,
-    SUBMISSION_STATUSES.NEEDS_UPDATES,
-  ].includes(status);
+  const eligibleForDelivery = (status) =>
+    [
+      SUBMISSION_STATUSES.ACCEPTED,
+      SUBMISSION_STATUSES.IN_PROGRESS,
+      SUBMISSION_STATUSES.NEEDS_UPDATES,
+    ].includes(status);
 
   const updateDeliveryForm = (id, field, value) => {
     setDeliveryForms((prev) => ({
       ...prev,
       [id]: {
-        deliveryUrl: '',
-        githubUrl: '',
+        deliveryUrl: "",
+        githubUrl: "",
         ...(prev[id] || {}),
         [field]: value,
       },
@@ -180,19 +194,28 @@ const FreelancerModule = () => {
     setDeliveryErrors((prev) => ({ ...prev, [id]: null }));
 
     if (!eligibleForDelivery(proposal.status)) {
-      setDeliveryErrors((prev) => ({ ...prev, [id]: 'You can submit work after the client accepts or requests updates.' }));
+      setDeliveryErrors((prev) => ({
+        ...prev,
+        [id]: "You can submit work after the client accepts or requests updates.",
+      }));
       return;
     }
 
     if (requiresAck && !deliveryAcknowledged[id]) {
-      setDeliveryErrors((prev) => ({ ...prev, [id]: 'Please acknowledge the requested updates first.' }));
+      setDeliveryErrors((prev) => ({
+        ...prev,
+        [id]: "Please acknowledge the requested updates first.",
+      }));
       return;
     }
 
     setDeliverySubmitting((prev) => ({ ...prev, [id]: true }));
     try {
       if (!form.deliveryUrl || !form.githubUrl) {
-        setDeliveryErrors((prev) => ({ ...prev, [id]: 'Please provide both deployment and GitHub URLs.' }));
+        setDeliveryErrors((prev) => ({
+          ...prev,
+          [id]: "Please provide both deployment and GitHub URLs.",
+        }));
         return;
       }
 
@@ -201,12 +224,20 @@ const FreelancerModule = () => {
         githubUrl: form.githubUrl,
       });
 
-      setProposals((prev) => prev.map((p) => (p._id === id ? { ...p, ...updated } : p)));
-      setDeliveryForms((prev) => ({ ...prev, [id]: { deliveryUrl: '', githubUrl: '' } }));
+      setProposals((prev) =>
+        prev.map((p) => (p._id === id ? { ...p, ...updated } : p)),
+      );
+      setDeliveryForms((prev) => ({
+        ...prev,
+        [id]: { deliveryUrl: "", githubUrl: "" },
+      }));
       setDeliveryAcknowledged((prev) => ({ ...prev, [id]: false }));
     } catch (err) {
       const backendMessage = err?.response?.data?.message;
-      setDeliveryErrors((prev) => ({ ...prev, [id]: backendMessage || 'Could not submit work.' }));
+      setDeliveryErrors((prev) => ({
+        ...prev,
+        [id]: backendMessage || "Could not submit work.",
+      }));
     } finally {
       setDeliverySubmitting((prev) => ({ ...prev, [id]: false }));
     }
@@ -214,27 +245,38 @@ const FreelancerModule = () => {
 
   const safeProjects = Array.isArray(projects) ? projects : [];
 
-  const filteredProjects = safeProjects.filter(project => {
-    if (activeTab === 'view-projects' || activeTab === 'dashboard' || activeTab === 'manage-proposals') return true;
+  const filteredProjects = safeProjects.filter((project) => {
+    if (
+      activeTab === "view-projects" ||
+      activeTab === "dashboard" ||
+      activeTab === "manage-proposals"
+    )
+      return true;
 
-    const status = project.status || '';
+    const status = project.status || "";
     const normalizedStatus = status.toLowerCase();
 
-    switch(activeTab) {
-      case 'in-progress':
-        return normalizedStatus === PROJECT_STATUSES.IN_PROGRESS.toLowerCase() || normalizedStatus === PROJECT_STATUSES.OPEN.toLowerCase();
-      case 'closed':
+    switch (activeTab) {
+      case "in-progress":
+        return (
+          normalizedStatus === PROJECT_STATUSES.IN_PROGRESS.toLowerCase() ||
+          normalizedStatus === PROJECT_STATUSES.OPEN.toLowerCase()
+        );
+      case "closed":
         return normalizedStatus === PROJECT_STATUSES.CLOSED.toLowerCase();
-      case 'completed':
+      case "completed":
         return normalizedStatus === PROJECT_STATUSES.COMPLETED.toLowerCase();
-      case 'my-projects':
+      case "my-projects":
         return true;
       default:
-        return normalizedStatus === PROJECT_STATUSES.OPEN.toLowerCase() || normalizedStatus.includes(activeTab);
+        return (
+          normalizedStatus === PROJECT_STATUSES.OPEN.toLowerCase() ||
+          normalizedStatus.includes(activeTab)
+        );
     }
   });
 
-  if (loading && activeTab !== 'post-project') {
+  if (loading && activeTab !== "post-project") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 flex items-center justify-center">
         <div className="text-center">
@@ -272,8 +314,9 @@ const FreelancerModule = () => {
               </span>
             </div>
             <div className="flex items-center gap-4">
+              <GoogleTranslate />
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
                 className="text-gray-700 hover:text-red-600 font-medium transition-colors"
               >
                 Back to Dashboard
@@ -284,276 +327,429 @@ const FreelancerModule = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Freelance & Tender Management</h1>
-          <p className="text-xl text-gray-600">Manage your projects, tenders, and freelance opportunities</p>
-        </div>
+        {/* Bento Grid Navigation */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
+          {/* Header Section - Spans full width on mobile, 4 cols on desktop */}
+          <div className="md:col-span-12 lg:col-span-4 flex flex-col justify-center space-y-4">
+            <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 tracking-tight">
+              Freelance & <br /> Tenders
+            </h1>
+            <p className="text-lg text-gray-600 leading-relaxed max-w-md">
+              Manage your professional ecosystem. Switch between posting projects and finding work with a single click.
+            </p>
+          </div>
 
-        {/* Quick Navigation */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          <button
-            onClick={() => setActiveTab('post-project')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'post-project'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            Post Project
-          </button>
-          <button
-            onClick={() => setActiveTab('view-projects')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'view-projects'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            View Projects
-          </button>
-          <button
-            onClick={() => setActiveTab('my-projects')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'my-projects'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            My Projects
-          </button>
-          <button
-            onClick={() => setActiveTab('my-proposals')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'my-proposals'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            My Proposals
-          </button>
-          <button
-            onClick={() => setActiveTab('in-progress')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'in-progress'
-                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            In Progress
-          </button>
-          
+          {/* Project Management Card (Red Theme) - Spans 4 cols */}
+          <div className="md:col-span-6 lg:col-span-4 group relative overflow-hidden bg-white rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-50/50 to-rose-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative p-8 h-full flex flex-col justify-between">
+              <div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white shadow-lg mb-6 transform group-hover:scale-110 transition-transform duration-500">
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Project Management</h2>
+                <p className="text-gray-500 font-medium">For Clients & Posters</p>
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3">
+                <button
+                  onClick={() => setActiveTab("post-project")}
+                  className={`w-full py-3.5 px-6 rounded-xl font-semibold transition-all shadow-sm flex items-center justify-between group/btn ${activeTab === "post-project"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-red-200 shadow-lg ring-2 ring-red-100"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-red-200 hover:bg-red-50/50"
+                    }`}
+                >
+                  Post a Project
+                  <span className={`transform transition-transform duration-300 ${activeTab === "post-project" ? "translate-x-1" : "group-hover/btn:translate-x-1"}`}>
+                    →
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("my-projects")}
+                  className={`w-full py-3.5 px-6 rounded-xl font-semibold transition-all shadow-sm flex items-center justify-between group/btn ${activeTab === "my-projects"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-red-200 shadow-lg ring-2 ring-red-100"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-red-200 hover:bg-red-50/50"
+                    }`}
+                >
+                  My Posted Projects
+                  <span className={`transform transition-transform duration-300 ${activeTab === "my-projects" ? "translate-x-1" : "group-hover/btn:translate-x-1"}`}>
+                    →
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Freelance Workspace Card (Blue Theme) - Spans 4 cols */}
+          <div className="md:col-span-6 lg:col-span-4 group relative overflow-hidden bg-white rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative p-8 h-full flex flex-col justify-between">
+              <div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg mb-6 transform group-hover:scale-110 transition-transform duration-500">
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Freelance Workspace</h2>
+                <p className="text-gray-500 font-medium">For Talents & Agencies</p>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setActiveTab("view-projects")}
+                  className={`col-span-2 py-3.5 px-6 rounded-xl font-semibold transition-all shadow-sm flex items-center justify-between group/btn ${activeTab === "view-projects"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-200 shadow-lg ring-2 ring-blue-100"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-blue-200 hover:bg-blue-50/50"
+                    }`}
+                >
+                  Find Work
+                  <span className={`transform transition-transform duration-300 ${activeTab === "view-projects" ? "translate-x-1" : "group-hover/btn:translate-x-1"}`}>
+                    →
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("in-progress")}
+                  className={`py-3 px-4 rounded-xl text-sm font-medium transition-all shadow-sm text-center ${activeTab === "in-progress"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 ring-2 ring-blue-100"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-blue-200 hover:bg-blue-50/30"
+                    }`}
+                >
+                  In Progress
+                </button>
+                <button
+                  onClick={() => setActiveTab("my-proposals")}
+                  className={`py-3 px-4 rounded-xl text-sm font-medium transition-all shadow-sm text-center ${activeTab === "my-proposals"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 ring-2 ring-blue-100"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-blue-200 hover:bg-blue-50/30"
+                    }`}
+                >
+                  Proposals
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-center gap-3">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             {error}
           </div>
         )}
 
         {/* Main Content Area */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 min-h-[600px]">
-          {activeTab === 'post-project' && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Create New Project</h2>
-              <ProjectForm onSubmit={handleProjectSubmit} />
-            </div>
-          )}
-
-          {activeTab !== 'post-project' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  {activeTab === 'view-projects' ? 'All Projects' : 
-                   activeTab === 'my-projects' ? 'My Projects' :
-                   activeTab === 'my-proposals' ? 'My Proposals' :
-                   activeTab === 'in-progress' ? 'In Progress Projects' : 
-                   'Projects'}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-8 min-h-[600px] relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent rounded-3xl pointer-events-none" />
+          <div className="relative z-10">
+            {activeTab === "post-project" && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-6">
+                  Create New Project
                 </h2>
-                <div className="text-sm text-gray-500">
-                  Showing {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
-                </div>
+                <ProjectForm onSubmit={handleProjectSubmit} />
               </div>
+            )}
 
-              {activeTab === 'my-proposals' ? (
-                <div>
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold text-gray-800">Proposals You've Submitted</h2>
-                    <div className="text-sm text-gray-500">
-                      {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} found
-                    </div>
+            {activeTab !== "post-project" && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {activeTab === "view-projects"
+                      ? "All Projects"
+                      : activeTab === "my-projects"
+                        ? "My Projects"
+                        : activeTab === "my-proposals"
+                          ? "My Proposals"
+                          : activeTab === "in-progress"
+                            ? "In Progress Projects"
+                            : "Projects"}
+                  </h2>
+                  <div className="text-sm text-gray-500">
+                    Showing {filteredProjects.length} project
+                    {filteredProjects.length !== 1 ? "s" : ""}
                   </div>
-                  
-                  {proposals.length > 0 ? (
-                    <div className="space-y-4">
-                      {proposals.map((proposal) => (
-                        <div key={proposal._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white">
-                          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-lg font-medium text-gray-900">{proposal.projectId?.title || 'Untitled Project'}</h3>
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(proposal.status)}`}>
-                                  {proposal.status}
-                                </span>
-                              </div>
-                              <p className="text-gray-600 mb-3">{proposal.description}</p>
-                              
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                                <div>
-                                  <span className="font-medium">Cost:</span> \${proposal.expectedCost}
-                                </div>
-                                <div>
-                                  <span className="font-medium">Delivery:</span> {proposal.expectedDelivery} days
-                                </div>
-                                <div>
-                                  <span className="font-medium">Submitted:</span> {new Date(proposal.submittedAt).toLocaleDateString()}
-                                </div>
-                              </div>
+                </div>
 
-                              {/* Delivery / solution submission when accepted or needs updates */}
-                              {proposal.status === SUBMISSION_STATUSES.SUBMITTED_WORK ? (
-                                <div className="mt-4 border-t border-gray-100 pt-4 space-y-2">
-                                  <div className="bg-green-50 border border-green-200 text-green-800 px-3 py-2 rounded-lg text-sm">
-                                    Work submitted. Awaiting client review.
-                                    {proposal.deliverySubmittedAt && (
-                                      <span className="ml-2 text-green-900">Submitted: {new Date(proposal.deliverySubmittedAt).toLocaleDateString()}</span>
-                                    )}
+                {activeTab === "my-proposals" ? (
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        Proposals You've Submitted
+                      </h2>
+                      <div className="text-sm text-gray-500">
+                        {proposals.length} proposal
+                        {proposals.length !== 1 ? "s" : ""} found
+                      </div>
+                    </div>
+
+                    {proposals.length > 0 ? (
+                      <div className="space-y-4">
+                        {proposals.map((proposal) => (
+                          <div
+                            key={proposal._id}
+                            className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
+                          >
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h3 className="text-lg font-medium text-gray-900">
+                                    {proposal.projectId?.title ||
+                                      "Untitled Project"}
+                                  </h3>
+                                  <span
+                                    className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(proposal.status)}`}
+                                  >
+                                    {proposal.status === 'Completed' ? "PAID & COMPLETED" : proposal.status}
+                                  </span>
+                                  {proposal.paymentStatus && (
+                                    <span className="px-2 py-1 text-xs font-medium rounded-full border bg-green-50 text-green-700 border-green-200">
+                                      Paid
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-gray-600 mb-3">
+                                  {proposal.description}
+                                </p>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                                  <div>
+                                    <span className="font-medium">Cost:</span> \$
+                                    {proposal.expectedCost}
                                   </div>
-                                  {proposal.deliveryUrl && (
-                                    <div className="text-xs text-gray-600">
-                                      Deployment: <a className="text-indigo-600 underline" href={proposal.deliveryUrl} target="_blank" rel="noreferrer">{proposal.deliveryUrl}</a>
-                                    </div>
-                                  )}
-                                  {proposal.deliveryNote && (
-                                    <div className="text-xs text-gray-600">
-                                      GitHub: <a className="text-indigo-600 underline" href={proposal.deliveryNote} target="_blank" rel="noreferrer">{proposal.deliveryNote}</a>
-                                    </div>
-                                  )}
+                                  <div>
+                                    <span className="font-medium">Delivery:</span>{" "}
+                                    {proposal.expectedDelivery} days
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">
+                                      Submitted:
+                                    </span>{" "}
+                                    {new Date(
+                                      proposal.submittedAt,
+                                    ).toLocaleDateString()}
+                                  </div>
                                 </div>
-                              ) : eligibleForDelivery(proposal.status) ? (
-                                <div className="mt-4 border-t border-gray-100 pt-4 space-y-3">
-                                  {proposal.status === SUBMISSION_STATUSES.NEEDS_UPDATES && (
-                                    <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-lg text-sm flex items-start justify-between gap-2">
-                                      <span>Client requested updates. Please acknowledge before submitting new work.</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => setDeliveryAcknowledged((prev) => ({ ...prev, [proposal._id]: true }))}
-                                        className="px-3 py-1 text-xs rounded bg-white text-yellow-800 border border-yellow-300 hover:bg-yellow-100"
-                                      >I saw the updates</button>
-                                    </div>
-                                  )}
 
-                                  {deliveryErrors[proposal._id] && (
-                                    <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">{deliveryErrors[proposal._id]}</div>
-                                  )}
-
-                                  <div className="space-y-2">
-                                    <div>
-                                      <label className="block text-xs font-semibold text-gray-700 mb-1">Deployment URL (required)</label>
-                                      <input
-                                        type="url"
-                                        value={deliveryForms[proposal._id]?.deliveryUrl || ''}
-                                        onChange={(e) => updateDeliveryForm(proposal._id, 'deliveryUrl', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        placeholder="https://your-live-app.example.com"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-semibold text-gray-700 mb-1">GitHub URL (required)</label>
-                                      <input
-                                        type="url"
-                                        value={deliveryForms[proposal._id]?.githubUrl || ''}
-                                        onChange={(e) => updateDeliveryForm(proposal._id, 'githubUrl', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        placeholder="https://github.com/your-repo"
-                                      />
-                                    </div>
-                                    <div className="flex items-center justify-between text-xs text-gray-500">
-                                      <span>Last status: {proposal.status}</span>
+                                {/* Delivery / solution submission when accepted or needs updates */}
+                                {proposal.status ===
+                                  SUBMISSION_STATUSES.SUBMITTED_WORK ? (
+                                  <div className="mt-4 border-t border-gray-100 pt-4 space-y-2">
+                                    <div className="bg-green-50 border border-green-200 text-green-800 px-3 py-2 rounded-lg text-sm">
+                                      Work submitted. Awaiting client review.
                                       {proposal.deliverySubmittedAt && (
-                                        <span>Last submitted: {new Date(proposal.deliverySubmittedAt).toLocaleDateString()}</span>
+                                        <span className="ml-2 text-green-900">
+                                          Submitted:{" "}
+                                          {new Date(
+                                            proposal.deliverySubmittedAt,
+                                          ).toLocaleDateString()}
+                                        </span>
                                       )}
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeliverySubmit(proposal)}
-                                      disabled={
-                                        deliverySubmitting[proposal._id] ||
-                                        (proposal.status === SUBMISSION_STATUSES.NEEDS_UPDATES && !deliveryAcknowledged[proposal._id])
-                                      }
-                                      className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60"
-                                    >
-                                      {deliverySubmitting[proposal._id] ? 'Submitting...' : 'Submit Work'}
-                                    </button>
+                                    {proposal.deliveryUrl && (
+                                      <div className="text-xs text-gray-600">
+                                        Deployment:{" "}
+                                        <a
+                                          className="text-indigo-600 underline"
+                                          href={proposal.deliveryUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          {proposal.deliveryUrl}
+                                        </a>
+                                      </div>
+                                    )}
+                                    {proposal.deliveryNote && (
+                                      <div className="text-xs text-gray-600">
+                                        GitHub:{" "}
+                                        <a
+                                          className="text-indigo-600 underline"
+                                          href={proposal.deliveryNote}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          {proposal.deliveryNote}
+                                        </a>
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                              ) : (
-                                <div className="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-500">
-                                  You can submit work after the client accepts or asks for updates.
-                                </div>
-                              )}
+                                ) : eligibleForDelivery(proposal.status) ? (
+                                  <div className="mt-4 border-t border-gray-100 pt-4 space-y-3">
+                                    {proposal.status ===
+                                      SUBMISSION_STATUSES.NEEDS_UPDATES && (
+                                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-lg text-sm flex items-start justify-between gap-2">
+                                          <span>
+                                            Client requested updates. Please
+                                            acknowledge before submitting new work.
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setDeliveryAcknowledged((prev) => ({
+                                                ...prev,
+                                                [proposal._id]: true,
+                                              }))
+                                            }
+                                            className="px-3 py-1 text-xs rounded bg-white text-yellow-800 border border-yellow-300 hover:bg-yellow-100"
+                                          >
+                                            I saw the updates
+                                          </button>
+                                        </div>
+                                      )}
+
+                                    {deliveryErrors[proposal._id] && (
+                                      <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
+                                        {deliveryErrors[proposal._id]}
+                                      </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                      <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                          Deployment URL (required)
+                                        </label>
+                                        <input
+                                          type="url"
+                                          value={
+                                            deliveryForms[proposal._id]
+                                              ?.deliveryUrl || ""
+                                          }
+                                          onChange={(e) =>
+                                            updateDeliveryForm(
+                                              proposal._id,
+                                              "deliveryUrl",
+                                              e.target.value,
+                                            )
+                                          }
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                                          placeholder="https://your-live-app.example.com"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                          GitHub URL (required)
+                                        </label>
+                                        <input
+                                          type="url"
+                                          value={
+                                            deliveryForms[proposal._id]
+                                              ?.githubUrl || ""
+                                          }
+                                          onChange={(e) =>
+                                            updateDeliveryForm(
+                                              proposal._id,
+                                              "githubUrl",
+                                              e.target.value,
+                                            )
+                                          }
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                                          placeholder="https://github.com/your-repo"
+                                        />
+                                      </div>
+                                      <div className="flex items-center justify-between text-xs text-gray-500">
+                                        <span>
+                                          Last status: {proposal.status}
+                                        </span>
+                                        {proposal.deliverySubmittedAt && (
+                                          <span>
+                                            Last submitted:{" "}
+                                            {new Date(
+                                              proposal.deliverySubmittedAt,
+                                            ).toLocaleDateString()}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleDeliverySubmit(proposal)
+                                        }
+                                        disabled={
+                                          deliverySubmitting[proposal._id] ||
+                                          (proposal.status ===
+                                            SUBMISSION_STATUSES.NEEDS_UPDATES &&
+                                            !deliveryAcknowledged[proposal._id])
+                                        }
+                                        className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60"
+                                      >
+                                        {deliverySubmitting[proposal._id]
+                                          ? "Submitting..."
+                                          : "Submit Work"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                                    You can submit work after the client accepts
+                                    or asks for updates.
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-2xl">
-                      <p className="text-gray-500 text-lg">No proposals found.</p>
-                      <button
-                        onClick={() => setActiveTab('view-projects')}
-                        className="mt-4 px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition-colors"
-                      >
-                        Browse Projects
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : selectedProject ? (
-                <ProjectDetail
-                  project={selectedProject}
-                  onBack={handleBackToList}
-                  onApply={handleApply}
-                  userProposals={proposals}
-                />
-              ) : filteredProjects.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-2xl">
-                  <p className="text-gray-500 text-lg mb-3">
-                    {activeTab === 'my-projects' 
-                      ? 'You have not created any projects yet.'
-                      : activeTab === 'in-progress'
-                      ? 'No projects are currently in progress.'
-                      : 'No projects found.'}
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    {activeTab !== 'view-projects' && (
-                      <button
-                        onClick={() => setActiveTab('view-projects')}
-                        className="px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition-colors"
-                      >
-                        Explore Projects
-                      </button>
-                    )}
-                    {activeTab === 'my-projects' && (
-                      <button
-                        onClick={() => setActiveTab('post-project')}
-                        className="px-4 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors"
-                      >
-                        Create Project
-                      </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                        <p className="text-gray-500 text-lg">
+                          No proposals found.
+                        </p>
+                        <button
+                          onClick={() => setActiveTab("view-projects")}
+                          className="mt-4 px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition-colors"
+                        >
+                          Browse Projects
+                        </button>
+                      </div>
                     )}
                   </div>
-                </div>
-              ) : (
-                <ProjectList 
-                  projects={filteredProjects}
-                  onStatusChange={updateProjectStatusHandler}
-                  showStatusControls={activeTab === 'my-projects'}
-                  onViewDetail={handleViewProjectDetail}
-                />
-              )}
-            </div>
-          )}
+                ) : selectedProject ? (
+                  <ProjectDetail
+                    project={selectedProject}
+                    onBack={handleBackToList}
+                    onApply={handleApply}
+                    userProposals={proposals}
+                  />
+                ) : filteredProjects.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                    <p className="text-gray-500 text-lg mb-3">
+                      {activeTab === "my-projects"
+                        ? "You have not created any projects yet."
+                        : activeTab === "in-progress"
+                          ? "No projects are currently in progress."
+                          : "No projects found."}
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      {activeTab !== "view-projects" && (
+                        <button
+                          onClick={() => setActiveTab("view-projects")}
+                          className="px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition-colors"
+                        >
+                          Explore Projects
+                        </button>
+                      )}
+                      {activeTab === "my-projects" && (
+                        <button
+                          onClick={() => setActiveTab("post-project")}
+                          className="px-4 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors"
+                        >
+                          Create Project
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <ProjectList
+                    projects={filteredProjects}
+                    onStatusChange={updateProjectStatusHandler}
+                    showStatusControls={activeTab === "my-projects"}
+                    onViewDetail={handleViewProjectDetail}
+                  />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

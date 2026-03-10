@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: deepan0202/vectora-frontend:v1
+          image: deepan0202/vectora-frontend:v10
           ports:
             - containerPort: 80
           readinessProbe:
