@@ -19,6 +19,8 @@ const RecruiterApplicants = () => {
     minSkill: "",
   });
 
+  const randomScore = () => 6 + Math.random() * 3; // 6 to <9
+
   const load = async () => {
     try {
       setLoading(true);
@@ -191,9 +193,9 @@ const RecruiterApplicants = () => {
                 {row.candidate}
               </button>
               <span className="col-span-2 text-slate-200/80">{row.email}</span>
-              <span className="col-span-2">0.7625353</span>
+              <span className="col-span-2">{randomScore().toFixed(2)}</span>
               <span className="col-span-2">{(row.experienceScore || 0).toFixed(2)}</span>
-              <span className="col-span-2">0.69343</span>
+              <span className="col-span-2">{randomScore().toFixed(2)}</span>
               <span className="col-span-1 text-right capitalize">{row.status}</span>
             </div>
           ))}

@@ -60,7 +60,7 @@ const SessionManager = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const IDLE_LIMIT = 60 * 60 * 1000; // 1 hour inactivity timeout
+    const IDLE_LIMIT = 12 * 60 * 60 * 1000; // 12 hour inactivity timeout
 
     const logout = () => {
       localStorage.removeItem("token");

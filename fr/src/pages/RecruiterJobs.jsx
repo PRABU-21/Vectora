@@ -266,6 +266,8 @@ const RecruiterJobs = () => {
               <GooeyNav
                 items={navItems}
                 activeIndex={activeNavIndex >= 0 ? activeNavIndex : 0}
+                textColor="#2563eb"
+                activeTextColor="#1d4ed8"
                 onSelect={(_, item) => navigate(item.href)}
               />
               <button

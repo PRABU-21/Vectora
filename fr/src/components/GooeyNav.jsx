@@ -9,6 +9,8 @@ const GooeyNav = ({
   particleR = 100,
   timeVariance = 300,
   colors = ["#38bdf8", "#6366f1", "#ec4899", "#14b8a6"],
+  textColor = "white",
+  activeTextColor = "black",
   initialActiveIndex = 0,
   activeIndex: controlledActiveIndex,
   onSelect,
@@ -158,8 +160,13 @@ const GooeyNav = ({
   }, [controlledActiveIndex]);
 
   const colorVars = useMemo(() => {
-    return colors.reduce((acc, c, idx) => ({ ...acc, [`--color-${idx + 1}`]: c }), {});
-  }, [colors]);
+    const paletteVars = colors.reduce((acc, c, idx) => ({ ...acc, [`--color-${idx + 1}`]: c }), {});
+    return {
+      ...paletteVars,
+      "--gooey-text-color": textColor,
+      "--gooey-active-color": activeTextColor,
+    };
+  }, [colors, textColor, activeTextColor]);
 
   return (
     <>
@@ -177,11 +184,11 @@ const GooeyNav = ({
             z-index: 1;
           }
           .gooey-effect.text {
-            color: white;
+            color: var(--gooey-text-color, white);
             transition: color 0.3s ease;
           }
           .gooey-effect.text.active {
-            color: black;
+            color: var(--gooey-active-color, black);
           }
           .gooey-effect.filter {
             filter: blur(7px) contrast(100) blur(0);
@@ -281,7 +288,7 @@ const GooeyNav = ({
             }
           }
           li.gooey-active {
-            color: black;
+            color: var(--gooey-active-color, black);
             text-shadow: none;
           }
           li.gooey-active::after {
@@ -307,14 +314,14 @@ const GooeyNav = ({
             ref={navRef}
             className="flex gap-6 list-none p-0 px-2 m-0 relative z-[3]"
             style={{
-              color: "white",
+              color: "var(--gooey-text-color)",
               textShadow: "0 1px 1px hsl(205deg 30% 10% / 0.2)",
             }}
           >
             {items.map((item, index) => (
               <li
                 key={item.label || index}
-                className={`rounded-full relative cursor-pointer transition-[background-color_color_box-shadow] duration-300 ease shadow-[0_0_0.5px_1.5px_transparent] text-white ${
+                className={`rounded-full relative cursor-pointer transition-[background-color_color_box-shadow] duration-300 ease shadow-[0_0_0.5px_1.5px_transparent] ${
                   active === index ? "gooey-active" : ""
                 }`}
               >
