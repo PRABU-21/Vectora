@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { uploadEmbedding } from "../data/api";
 import ParticlesBackground from "../components/ParticlesBackground";
 import GoogleTranslate from "../components/GoogleTranslate";
+import GooeyNav from "../components/GooeyNav";
 
 const AddEmbeddings = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
@@ -14,6 +16,12 @@ const AddEmbeddings = () => {
     const userData = localStorage.getItem("user");
     return userData ? JSON.parse(userData) : null;
   });
+
+  const navItems = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Profile", href: "/profile" },
+  ];
+  const activeNavIndex = navItems.findIndex((item) => location.pathname.startsWith(item.href));
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -104,44 +112,11 @@ const AddEmbeddings = () => {
                   </span>
                 </div>
               )}
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="text-gray-700 hover:text-red-600 font-medium transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                <span className="hidden sm:inline">Dashboard</span>
-              </button>
-              <button
-                onClick={() => navigate("/profile")}
-                className="text-gray-700 hover:text-red-600 font-medium transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span className="hidden sm:inline">Profile</span>
-              </button>
+              <GooeyNav
+                items={navItems}
+                activeIndex={activeNavIndex >= 0 ? activeNavIndex : 0}
+                onSelect={(_, item) => navigate(item.href)}
+              />
               <button
                 onClick={handleLogout}
                 className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"

@@ -20,6 +20,8 @@ import ChatWidget from "./components/ChatWidget";
 import RecruiterJobs from "./pages/RecruiterJobs";
 import RecruiterApplicants from "./pages/RecruiterApplicants";
 import RecruiterShortlist from "./pages/RecruiterShortlist";
+import PostedJobs from "./pages/PostedJobs";
+import RecruiterProfile from "./pages/RecruiterProfile";
 import JobApply from "./pages/JobApply";
 import "./App.css";
 
@@ -58,7 +60,7 @@ const SessionManager = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const IDLE_LIMIT = 5 * 60 * 1000; // 5 minutes
+    const IDLE_LIMIT = 12 * 60 * 60 * 1000; // 12 hour inactivity timeout
 
     const logout = () => {
       localStorage.removeItem("token");
@@ -167,6 +169,22 @@ function App() {
           element={
             <ProtectedRoute roles={["recruiter"]}>
               <RecruiterJobs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recruiter/profile"
+          element={
+            <ProtectedRoute roles={["recruiter"]}>
+              <RecruiterProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recruiter/posted"
+          element={
+            <ProtectedRoute roles={["recruiter"]}>
+              <PostedJobs />
             </ProtectedRoute>
           }
         />

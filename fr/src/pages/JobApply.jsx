@@ -8,7 +8,6 @@ const JobApply = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
-  const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,17 +24,11 @@ const JobApply = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return setMessage("Upload a resume first");
     setLoading(true);
     setMessage("");
     try {
-      const formData = new FormData();
-      formData.append("resume", file);
-      await api.post(`/recruiter/jobs/${jobId}/apply`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setMessage("Application submitted");
-      setFile(null);
+      await api.post(`/recruiter/jobs/${jobId}/apply`);
+      setMessage("Application submitted using your saved resume");
     } catch (err) {
       setMessage(err?.response?.data?.message || "Failed to apply");
     } finally {
@@ -67,19 +60,16 @@ const JobApply = () => {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Apply with resume</h2>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx,.txt"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-700"
-          />
+          <h2 className="text-xl font-semibold text-gray-900">Apply instantly</h2>
+          <p className="text-sm text-gray-600">
+            We will send your saved resume and profile data already on file. Update your resume in your profile if needed.
+          </p>
           <button
             type="submit"
             disabled={loading}
             className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold hover:from-sky-700 hover:to-indigo-800 shadow-md disabled:opacity-60"
           >
-            {loading ? "Submitting..." : "Submit application"}
+            {loading ? "Submitting..." : "Apply now"}
           </button>
           {message && <div className="text-sm text-sky-700">{message}</div>}
         </form>

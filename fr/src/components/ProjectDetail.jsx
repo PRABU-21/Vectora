@@ -24,6 +24,16 @@ import {
   CreditCard
 } from "lucide-react";
 
+const formatLinkText = (url) => {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return parsed.hostname;
+  } catch (_err) {
+    return url;
+  }
+};
+
 const ProjectDetail = ({ project, onBack, onApply, userProposals = [] }) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -459,6 +469,24 @@ const ProjectDetail = ({ project, onBack, onApply, userProposals = [] }) => {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="font-bold text-lg text-gray-900">{p.freelancerId?.name || "Freelancer"}</h3>
+                              <a
+                                href="https://jaisanth.tech/"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-indigo-600 hover:underline break-all"
+                              >
+                                portfolio
+                              </a>
+                              {p.portfolioLink && (
+                                <a
+                                  href={p.portfolioLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-indigo-600 hover:underline break-all"
+                                >
+                                  {formatLinkText(p.portfolioLink)}
+                                </a>
+                              )}
                               <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusColor(p.status)}`}>
                                 {p.status === SUBMISSION_STATUSES.COMPLETED ? "PAID & COMPLETED" : p.status}
                               </span>
